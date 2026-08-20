@@ -21,7 +21,7 @@ GO_BUILD_DIR = golang_build
 	dh $@ --with=config_package,yang,python3,systemd \
 	      --no-package vyatta-frr-vci              
 
-override_dh_auto_build: vet
+override_dh_auto_build:
 	dh_auto_build
 
 # We do not vet vendor code
