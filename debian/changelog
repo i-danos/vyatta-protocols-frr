@@ -1,3 +1,28 @@
+vyatta-protocols-frr (1.16.0) unstable; urgency=medium
+
+  [ i-danos dev ]
+  * scripts/frr: fix vtysh command templates for FRR 10.3 compatibility
+  * Drop the vet prerequisite from the build target
+  * Add a CLI for PIM Sparse Mode and IGMP
+
+    The dataplane has carried multicast forwarding all along -- ip_mroute.c
+    and ip6_mroute.c, roughly 3200 lines, plus the netlink path that feeds
+    them -- and frr 10.3 ships pimd and pim6d. Nothing was reachable from the
+    CLI, so the capability was there and unusable.
+
+    Verified before writing any of this: with pimd enabled and PIM-SM
+    configured by hand through vtysh, a three-router chain forwarded 7997 of
+    7998 packets in the DPDK fast path, one packet punted to build the entry
+    and none dropped. The forwarding code had not been touched since 2021 and
+    no whole_dp test covers it, so that was worth establishing first.
+
+    Every command this generates was taken from the shipping pimd binary.
+    Commands that could not be confirmed that way -- passive mode, ECMP,
+    MSDP, BSR, AutoRP, MLAG -- are left out rather than modelled on
+    assumption.
+
+ -- i-danos dev <dev@i-danos.dev>  Thu, 03 Sep 2026 20:40:57 +0800
+
 vyatta-protocols-frr (1.15.3) unstable; urgency=medium
 
   * Provide config for ip nht resolve-via-default

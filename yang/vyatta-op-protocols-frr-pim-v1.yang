@@ -1,0 +1,205 @@
+module vyatta-op-protocols-frr-pim-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-op-pim-1";
+	prefix vyatta-op-protocols-frr-pim-v1;
+
+	import vyatta-types-v1 {
+		prefix types;
+	}
+	import vyatta-opd-extensions-v1 {
+		prefix opd;
+	}
+	import vyatta-op-show-v1 {
+		prefix op-show;
+	}
+	import vyatta-op-show-protocols-v1 {
+		prefix op-show-protocols;
+	}
+
+	organization "i-danos";
+	contact
+		"i-danos
+		 Web: https://github.com/i-danos";
+
+	description
+		"Copyright (c) 2026, i-danos. All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or
+		 without modification, are permitted provided that the following
+		 conditions are met:
+
+		 1. Redistributions of source code must retain the above copyright
+			notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+			copyright notice, this list of conditions and the following
+			disclaimer in the documentation and/or other materials provided
+			with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+			contributors may be used to endorse or promote products derived
+			from this software without specific prior written permission.
+
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 Operational commands for PIM and IGMP.
+
+		 'show protocols pim mroute' is worth knowing about: it is the
+		 forwarding table PIM built, and it is the first place to look when a
+		 tree is up but nothing is being forwarded. An entry flagged P is
+		 pruned -- it has no outgoing interface, which is what a receiver
+		 joining on the interface that faces the RP looks like.";
+
+	revision 2026-09-03 {
+		description "Initial revision";
+	}
+
+	opd:augment /op-show:show/op-show-protocols:protocols {
+		opd:command pim {
+			opd:help "Show PIM information";
+
+			opd:command interface {
+				opd:help "PIM interface information";
+				opd:on-enter 'vtysh -c "show ip pim interface"';
+				opd:privileged true;
+
+				opd:command detail {
+					opd:help "Show detailed information";
+					opd:on-enter 'vtysh -c "show ip pim interface detail"';
+					opd:privileged true;
+				}
+			}
+			opd:command neighbor {
+				opd:help "PIM neighbor information";
+				opd:on-enter 'vtysh -c "show ip pim neighbor"';
+				opd:privileged true;
+
+				opd:command detail {
+					opd:help "Show detailed information";
+					opd:on-enter 'vtysh -c "show ip pim neighbor detail"';
+					opd:privileged true;
+				}
+			}
+			opd:command join {
+				opd:help "PIM join information";
+				opd:on-enter 'vtysh -c "show ip pim join"';
+				opd:privileged true;
+			}
+			opd:command state {
+				opd:help "PIM state, including the outgoing interface list";
+				opd:on-enter 'vtysh -c "show ip pim state"';
+				opd:privileged true;
+			}
+			opd:command upstream {
+				opd:help "PIM upstream information";
+				opd:on-enter 'vtysh -c "show ip pim upstream"';
+				opd:privileged true;
+			}
+			opd:command rp-info {
+				opd:help "Rendezvous Point information";
+				opd:on-enter 'vtysh -c "show ip pim rp-info"';
+				opd:privileged true;
+			}
+			opd:command rpf {
+				opd:help "Reverse Path Forwarding information";
+				opd:on-enter 'vtysh -c "show ip pim rpf"';
+				opd:privileged true;
+			}
+			opd:command nexthop {
+				opd:help "PIM next hop information";
+				opd:on-enter 'vtysh -c "show ip pim nexthop"';
+				opd:privileged true;
+			}
+			opd:command group-type {
+				opd:help "Multicast group type, any-source or source-specific";
+				opd:on-enter 'vtysh -c "show ip pim group-type"';
+				opd:privileged true;
+
+				opd:argument ipv4-address {
+					opd:help "Multicast group address";
+					opd:on-enter 'vtysh -c "show ip pim group-type $5"';
+					opd:privileged true;
+					type types:ipv4-address;
+				}
+			}
+			opd:command statistics {
+				opd:help "PIM statistics";
+				opd:on-enter 'vtysh -c "show ip pim statistics"';
+				opd:privileged true;
+			}
+			opd:command mroute {
+				opd:help "Multicast forwarding table";
+				opd:on-enter 'vtysh -c "show ip mroute"';
+				opd:privileged true;
+
+				opd:command count {
+					opd:help "Per-entry packet and byte counts";
+					opd:on-enter 'vtysh -c "show ip mroute count"';
+					opd:privileged true;
+				}
+				opd:command summary {
+					opd:help "Summary of the multicast forwarding table";
+					opd:on-enter 'vtysh -c "show ip mroute summary"';
+					opd:privileged true;
+				}
+			}
+		}
+
+		opd:command igmp {
+			opd:help "Show IGMP information";
+
+			opd:command interface {
+				opd:help "IGMP interface information";
+				opd:on-enter 'vtysh -c "show ip igmp interface"';
+				opd:privileged true;
+
+				opd:command detail {
+					opd:help "Show detailed information";
+					opd:on-enter 'vtysh -c "show ip igmp interface detail"';
+					opd:privileged true;
+				}
+			}
+			opd:command groups {
+				opd:help "Groups with members on this router";
+				opd:on-enter 'vtysh -c "show ip igmp groups"';
+				opd:privileged true;
+
+				opd:command detail {
+					opd:help "Show detailed information";
+					opd:on-enter 'vtysh -c "show ip igmp groups detail"';
+					opd:privileged true;
+				}
+			}
+			opd:command sources {
+				opd:help "Sources reported for each group";
+				opd:on-enter 'vtysh -c "show ip igmp sources"';
+				opd:privileged true;
+			}
+			opd:command join-group {
+				opd:help "Groups this router has joined itself";
+				opd:on-enter 'vtysh -c "show ip igmp join-group"';
+				opd:privileged true;
+			}
+			opd:command static-group {
+				opd:help "Statically forwarded groups";
+				opd:on-enter 'vtysh -c "show ip igmp static-group"';
+				opd:privileged true;
+			}
+			opd:command statistics {
+				opd:help "IGMP statistics";
+				opd:on-enter 'vtysh -c "show ip igmp statistics"';
+				opd:privileged true;
+			}
+		}
+	}
+}

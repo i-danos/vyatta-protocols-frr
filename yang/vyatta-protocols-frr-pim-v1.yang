@@ -1,0 +1,389 @@
+module vyatta-protocols-frr-pim-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-protocols-frr-pim:1";
+	prefix protocols-frr-pim;
+
+	import configd-v1 {
+		prefix configd;
+	}
+
+	import vyatta-types-v1 {
+		prefix types;
+	}
+
+	import vyatta-policy-v1 {
+		prefix policy;
+	}
+
+	import vyatta-policy-route-v1 {
+		prefix policy-route;
+	}
+
+	import vyatta-protocols-v1 {
+		prefix protocols;
+	}
+
+	import vyatta-interfaces-v1 {
+		prefix if;
+	}
+
+	import vyatta-interfaces-bridge-v1 {
+		prefix interfaces-bridge;
+	}
+
+	import vyatta-interfaces-dataplane-v1 {
+		prefix interfaces-dataplane;
+	}
+
+	import vyatta-interfaces-bonding-v1 {
+		prefix interfaces-bonding;
+	}
+
+	import vyatta-interfaces-loopback-v1 {
+		prefix interfaces-loopback;
+	}
+
+	import vyatta-interfaces-tunnel-v1 {
+		prefix interfaces-tunnel;
+	}
+
+	import vyatta-interfaces-vti-v1 {
+		prefix interfaces-vti;
+	}
+
+	organization "i-danos";
+	contact
+		"i-danos
+		 Web: https://github.com/i-danos";
+
+	description
+		"Copyright (c) 2026, i-danos. All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or
+		 without modification, are permitted provided that the following
+		 conditions are met:
+
+		 1. Redistributions of source code must retain the above copyright
+			notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+			copyright notice, this list of conditions and the following
+			disclaimer in the documentation and/or other materials provided
+			with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+			contributors may be used to endorse or promote products derived
+			from this software without specific prior written permission.
+
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 PIM Sparse Mode and IGMP configuration.
+
+		 Every node here maps to a command this project extracted from the
+		 shipping FRR 10.3 pimd binary and confirmed it accepts. Commands that
+		 could not be confirmed that way -- passive mode, ECMP, MSDP, BSR,
+		 AutoRP, MLAG -- are deliberately absent rather than modelled on
+		 assumption; see commands/pim.json for the translation.";
+
+	revision 2026-09-03 {
+		description "Initial revision of version 1.";
+	}
+
+	/*
+	 * Typedefs
+	 */
+	typedef prefix-list-ref {
+		type leafref {
+			path "/policy:policy/policy-route:route/policy-route:prefix-list/policy-route:tagnode";
+		}
+		description "A type for reference to an IPv4 prefix list.";
+	}
+
+	/*
+	 * Groupings
+	 */
+	grouping itf-ip-pim {
+		container pim {
+			configd:help "Protocol Independent Multicast (PIM) parameters";
+			description
+				"Enables PIM on this interface. PIM needs a unicast route back
+				towards the source for its RPF check, so an interface carrying
+				multicast normally also runs a unicast routing protocol.";
+			presence "Present to enable PIM on this interface.";
+
+			leaf hello-interval {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "PIM hello interval (seconds)";
+				description
+					"The interval between PIM hello messages sent on this
+					interface.";
+			}
+			leaf hello-holdtime {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				must "../hello-interval" {
+					error-message "pim hello-holdtime requires hello-interval to be set";
+				}
+				configd:help "PIM hello hold time (seconds)";
+				description
+					"The hold time advertised in PIM hello messages. FRR takes
+					this only as the second argument of its hello command, so
+					it cannot be set on its own.";
+			}
+			leaf dr-priority {
+				type uint32 {
+					range 0..4294967295;
+				}
+				configd:help "Designated Router election priority";
+				description
+					"The priority used in Designated Router election on this
+					interface. Higher wins.";
+			}
+			leaf use-source {
+				type types:ipv4-address;
+				configd:help "Source address to use in PIM messages";
+				description
+					"Overrides the source address PIM puts in the messages it
+					sends on this interface.";
+			}
+		} // pim
+
+		container igmp {
+			configd:help "Internet Group Management Protocol (IGMP) parameters";
+			description
+				"Enables IGMP on this interface, so that receivers reached
+				through it can join multicast groups.";
+			presence "Present to enable IGMP on this interface.";
+
+			leaf query-interval {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "IGMP host query interval (seconds)";
+				description
+					"The interval between general IGMP queries sent on this
+					interface.";
+			}
+			leaf query-max-response-time {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "IGMP maximum query response time (seconds)";
+				description
+					"The maximum response time advertised in IGMP queries.";
+			}
+			leaf last-member-query-count {
+				type uint32 {
+					range 1..255;
+				}
+				configd:help "IGMP last member query count";
+				description
+					"The number of group-specific queries sent before the
+					group is considered to have no members left.";
+			}
+			leaf last-member-query-interval {
+				type uint32 {
+					range 1..65535;
+				}
+				units deciseconds;
+				configd:help "IGMP last member query interval (deciseconds)";
+				description
+					"The interval between group-specific queries.";
+			}
+			list join-group {
+				key "tagnode";
+				configd:help "Join a multicast group on this interface";
+				description
+					"Makes the router itself a member of the group, so traffic
+					is delivered to it whether or not a real receiver has sent
+					a report. Note that the join has to be on a downstream
+					interface: PIM will not build a tree whose outgoing
+					interface is also its incoming interface.";
+
+				leaf tagnode {
+					type types:ipv4-address;
+					configd:help "Multicast group address";
+				}
+				leaf source {
+					type types:ipv4-address;
+					configd:help "Source address, for a source-specific join";
+					description
+						"Restricts the join to one source (SSM). Omit for an
+						any-source join.";
+				}
+			}
+			list static-group {
+				key "tagnode";
+				configd:help "Statically forward a multicast group out of this interface";
+				description
+					"Adds the interface to the outgoing list for the group
+					without the router joining it, so traffic is forwarded but
+					not delivered locally.";
+
+				leaf tagnode {
+					type types:ipv4-address;
+					configd:help "Multicast group address";
+				}
+				leaf source {
+					type types:ipv4-address;
+					configd:help "Source address, for a source-specific entry";
+				}
+			}
+		} // igmp
+	} // itf-ip-pim
+
+	augment /protocols:protocols {
+		description "PIM augmentation.";
+		container pim {
+			configd:help "Protocol Independent Multicast (PIM)";
+			presence "Present for PIM configuration.";
+
+			list rp {
+				key "tagnode";
+				configd:help "Rendezvous Point";
+				description
+					"A statically configured Rendezvous Point. Either list the
+					group ranges it serves, or point it at a prefix list.
+
+					There is deliberately no shorthand for 'all groups': FRR
+					defaults a bare rp command to 224.0.0.0/4, and writing that
+					range out is clearer than a form whose meaning is implicit
+					and which would silently conflict with a per-group entry
+					on the same RP.";
+
+				leaf tagnode {
+					type types:ipv4-address;
+					configd:help "Rendezvous Point address";
+				}
+				list group {
+					key "tagnode";
+					configd:help "Multicast group range served by this RP";
+
+					leaf tagnode {
+						type types:ipv4-prefix;
+						configd:help "Multicast group range";
+					}
+				}
+				leaf prefix-list {
+					type prefix-list-ref;
+					configd:help "Prefix list selecting the groups served by this RP";
+				}
+			}
+			leaf keep-alive-timer {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "(S,G) keep alive timer (seconds)";
+				description
+					"How long an (S,G) entry is kept after traffic for it
+					stops.";
+			}
+			leaf rp-keep-alive-timer {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "Keep alive timer for (S,G) state at the RP (seconds)";
+			}
+			leaf register-suppress-time {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "Register suppression time (seconds)";
+				description
+					"How long the first hop router stops sending registers
+					after receiving a register-stop.";
+			}
+			leaf join-prune-interval {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "Join/Prune send interval (seconds)";
+			}
+			leaf packets {
+				type uint32 {
+					range 1..255;
+				}
+				configd:help "Number of packets processed per PIM scheduler run";
+			}
+			container spt-switchover {
+				configd:help "Shortest Path Tree switchover behaviour";
+
+				container infinity-and-beyond {
+					configd:help "Never switch over to the Shortest Path Tree";
+					description
+						"Keeps traffic on the shared tree through the RP
+						instead of switching to the source tree.";
+					presence "Present to stay on the shared tree.";
+
+					leaf prefix-list {
+						type prefix-list-ref;
+						configd:help "Restrict the behaviour to the groups this prefix list selects";
+					}
+				}
+			}
+			container ssm {
+				configd:help "Source Specific Multicast parameters";
+
+				leaf prefix-list {
+					type prefix-list-ref;
+					configd:help "Prefix list selecting the SSM group range";
+					description
+						"Groups selected by this prefix list are treated as
+						SSM rather than any-source, replacing the default
+						232.0.0.0/8.";
+				}
+			}
+		} // container pim
+	}
+
+	/*
+	 * PIM and IGMP are offered on the same interface types as OSPF, which is
+	 * the established set in this package for a protocol that runs on any
+	 * routed IP interface.
+	 */
+	augment /if:interfaces/interfaces-bridge:bridge/interfaces-bridge:ip {
+		uses itf-ip-pim;
+	}
+	augment /if:interfaces/interfaces-dataplane:dataplane/interfaces-dataplane:ip {
+		uses itf-ip-pim;
+	}
+	augment /if:interfaces/interfaces-dataplane:dataplane/interfaces-dataplane:vif/interfaces-dataplane:ip {
+		uses itf-ip-pim;
+	}
+	augment /if:interfaces/interfaces-bonding:bonding/interfaces-bonding:ip {
+		uses itf-ip-pim;
+	}
+	augment /if:interfaces/interfaces-bonding:bonding/interfaces-bonding:vif/interfaces-bonding:ip {
+		uses itf-ip-pim;
+	}
+	augment /if:interfaces/interfaces-loopback:loopback/interfaces-loopback:ip {
+		uses itf-ip-pim;
+	}
+	augment /if:interfaces/interfaces-tunnel:tunnel/interfaces-tunnel:ip {
+		uses itf-ip-pim;
+	}
+	augment /if:interfaces/interfaces-vti:vti/interfaces-vti:ip {
+		uses itf-ip-pim;
+	}
+}

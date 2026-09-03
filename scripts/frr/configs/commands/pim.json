@@ -1,0 +1,23 @@
+{
+    "/protocols/pim/@enter": "!",
+    "/protocols/pim/join-prune-interval": "ip pim join-prune-interval {/@text}",
+    "/protocols/pim/keep-alive-timer": "ip pim keep-alive-timer {/@text}",
+    "/protocols/pim/packets": "ip pim packets {/@text}",
+    "/protocols/pim/register-suppress-time": "ip pim register-suppress-time {/@text}",
+    "/protocols/pim/rp-keep-alive-timer": "ip pim rp keep-alive-timer {/@text}",
+    "/protocols/pim/rp/@element/group/@element": "ip pim rp {/../../tagnode/@text} {/tagnode/@text}",
+    "/protocols/pim/rp/@element/prefix-list": "ip pim rp {../tagnode/@text} prefix-list {/@text}",
+    "/protocols/pim/spt-switchover/infinity-and-beyond": "ip pim spt-switchover infinity-and-beyond [prefix-list {/prefix-list/@text},]",
+    "/protocols/pim/ssm/prefix-list": "ip pim ssm prefix-list {/@text}",
+    "/interfaces/@element/ip/pim": "ip pim",
+    "/interfaces/@element/ip/pim/dr-priority": "ip pim drpriority {/@text}",
+    "/interfaces/@element/ip/pim/hello-interval": "ip pim hello {/@text} [{../hello-holdtime/@text},]",
+    "/interfaces/@element/ip/pim/use-source": "ip pim use-source {/@text}",
+    "/interfaces/@element/ip/igmp": "ip igmp",
+    "/interfaces/@element/ip/igmp/last-member-query-count": "ip igmp last-member-query-count {/@text}",
+    "/interfaces/@element/ip/igmp/last-member-query-interval": "ip igmp last-member-query-interval {/@text}",
+    "/interfaces/@element/ip/igmp/query-interval": "ip igmp query-interval {/@text}",
+    "/interfaces/@element/ip/igmp/query-max-response-time": "ip igmp query-max-response-time {/@text}",
+    "/interfaces/@element/ip/igmp/join-group/@element": "ip igmp join-group {/tagnode/@text} [{/source/@text},]",
+    "/interfaces/@element/ip/igmp/static-group/@element": "ip igmp static-group {/tagnode/@text} [{/source/@text},]"
+}
