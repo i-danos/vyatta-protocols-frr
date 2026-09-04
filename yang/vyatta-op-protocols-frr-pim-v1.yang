@@ -137,6 +137,52 @@ module vyatta-op-protocols-frr-pim-v1 {
 				opd:on-enter 'vtysh -c "show ip pim statistics"';
 				opd:privileged true;
 			}
+			opd:command bsr {
+				opd:help "Bootstrap Router information";
+				opd:on-enter 'vtysh -c "show ip pim bsr"';
+				opd:privileged true;
+
+				opd:command candidate-bsr {
+					opd:help "Candidate BSR information";
+					opd:on-enter 'vtysh -c "show ip pim bsr candidate-bsr"';
+					opd:privileged true;
+				}
+				opd:command candidate-rp {
+					opd:help "Candidate RP information";
+					opd:on-enter 'vtysh -c "show ip pim bsr candidate-rp"';
+					opd:privileged true;
+
+					opd:command database {
+						opd:help "Candidate RP database";
+						opd:on-enter 'vtysh -c "show ip pim bsr candidate-rp-database"';
+						opd:privileged true;
+					}
+				}
+				opd:command groups {
+					opd:help "Group ranges learned through BSR";
+					opd:on-enter 'vtysh -c "show ip pim bsr groups"';
+					opd:privileged true;
+				}
+				opd:command rp-info {
+					opd:help "RP information learned through BSR";
+					opd:on-enter 'vtysh -c "show ip pim bsr rp-info"';
+					opd:privileged true;
+				}
+			}
+			opd:command bsm-database {
+				opd:help "Bootstrap message database";
+				opd:on-enter 'vtysh -c "show ip pim bsm-database"';
+				opd:privileged true;
+			}
+			opd:command autorp {
+				opd:help "Auto-RP information";
+				description
+					"FRR does not write Auto-RP state back into the running
+					configuration, so this is the only way to see whether
+					discovery and announcement are actually on.";
+				opd:on-enter 'vtysh -c "show ip pim autorp"';
+				opd:privileged true;
+			}
 			opd:command mroute {
 				opd:help "Multicast forwarding table";
 				opd:on-enter 'vtysh -c "show ip mroute"';
@@ -154,6 +200,45 @@ module vyatta-op-protocols-frr-pim-v1 {
 				}
 			}
 		}
+
+		opd:command msdp {
+			opd:help "Show MSDP information";
+
+			opd:command peer {
+				opd:help "MSDP peer information";
+				opd:on-enter 'vtysh -c "show ip msdp peer"';
+				opd:privileged true;
+
+				opd:command detail {
+					opd:help "Show detailed information";
+					opd:on-enter 'vtysh -c "show ip msdp peer detail"';
+					opd:privileged true;
+				}
+				opd:argument ipv4-address {
+					opd:help "Peer address";
+					opd:on-enter 'vtysh -c "show ip msdp peer $5"';
+					opd:privileged true;
+					type types:ipv4-address;
+				}
+			}
+			opd:command mesh-group {
+				opd:help "MSDP mesh group information";
+				opd:on-enter 'vtysh -c "show ip msdp mesh-group"';
+				opd:privileged true;
+			}
+			opd:command sa {
+				opd:help "Source-Active entries";
+				opd:on-enter 'vtysh -c "show ip msdp sa"';
+				opd:privileged true;
+
+				opd:command detail {
+					opd:help "Show detailed information";
+					opd:on-enter 'vtysh -c "show ip msdp sa detail"';
+					opd:privileged true;
+				}
+			}
+		}
+
 
 		opd:command igmp {
 			opd:help "Show IGMP information";
