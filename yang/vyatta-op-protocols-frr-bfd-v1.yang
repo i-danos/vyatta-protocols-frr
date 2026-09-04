@@ -1,0 +1,106 @@
+module vyatta-op-protocols-frr-bfd-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-op-bfd-1";
+	prefix vyatta-op-protocols-frr-bfd-v1;
+
+	import vyatta-types-v1 {
+		prefix types;
+	}
+	import vyatta-opd-extensions-v1 {
+		prefix opd;
+	}
+	import vyatta-op-show-v1 {
+		prefix op-show;
+	}
+	import vyatta-op-show-protocols-v1 {
+		prefix op-show-protocols;
+	}
+
+	organization "i-danos";
+	contact
+		"i-danos
+		 Web: https://github.com/i-danos";
+
+	description
+		"Copyright (c) 2026, i-danos. All rights reserved.
+		 Redistribution and use in source and binary forms, with or
+		 without modification, are permitted provided that the following
+		 conditions are met:
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 Operational commands for BFD.
+
+		 The counters matter more here than for most protocols. A session
+		 that is up tells you very little; what says whether BFD is doing
+		 its job is the control packet counts moving and the session not
+		 having flapped.";
+
+	revision 2026-09-04 {
+		description "Initial revision";
+	}
+
+	opd:augment /op-show:show/op-show-protocols:protocols {
+		opd:command bfd {
+			opd:help "Show BFD information";
+
+			opd:command peers {
+				opd:help "BFD session information";
+				opd:on-enter 'vtysh -c "show bfd peers"';
+				opd:privileged true;
+
+				opd:command brief {
+					opd:help "One line per session";
+					opd:on-enter 'vtysh -c "show bfd peers brief"';
+					opd:privileged true;
+				}
+				opd:command counters {
+					opd:help "Per-session packet counters";
+					opd:on-enter 'vtysh -c "show bfd peers counters"';
+					opd:privileged true;
+				}
+			}
+			opd:command peer {
+				opd:help "A single BFD session";
+
+				opd:argument peer-address {
+					opd:help "Peer address";
+					opd:on-enter 'vtysh -c "show bfd peer $5"';
+					opd:privileged true;
+					type union {
+						type types:ipv4-address;
+						type types:ipv6-address;
+					}
+
+					opd:command counters {
+						opd:help "Packet counters for this session";
+						opd:on-enter 'vtysh -c "show bfd peer $5 counters"';
+						opd:privileged true;
+					}
+				}
+			}
+			opd:command static {
+				opd:help "Static routes tracked by BFD";
+
+				opd:command route {
+					opd:help "Show the tracked routes";
+					opd:on-enter 'vtysh -c "show bfd static route"';
+					opd:privileged true;
+				}
+			}
+			opd:command distributed {
+				opd:help "Distributed BFD state";
+				opd:on-enter 'vtysh -c "show bfd distributed"';
+				opd:privileged true;
+			}
+		}
+	}
+}

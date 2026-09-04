@@ -1,0 +1,8 @@
+./etc/frr/daemons.danos
+./units/frr.service.d
+./units/vyatta-frr-base-config.service
+./units/vyatta-routing-frr-early.target
+./units/vyatta-routing-frr.target
+./units/vyatta-static-arp.service.d
+./scripts/common/vtyshow.pl
+./scripts/common/vyatta-link-detect

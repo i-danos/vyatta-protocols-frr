@@ -52,5 +52,7 @@
     "/interfaces/@element/ip/igmp/query-max-response-time": "ip igmp query-max-response-time {/@text}",
     "/interfaces/@element/ip/igmp/join-group/@element": "ip igmp join-group {/tagnode/@text} [{/source/@text},]",
     "/interfaces/@element/ip/igmp/static-group/@element": "ip igmp static-group {/tagnode/@text} [{/source/@text},]",
-    "/protocols/pim/@exit": "exit"
+    "/protocols/pim/@exit": "exit",
+    "/interfaces/@element/ip/pim/bfd": "ip pim bfd",
+    "/interfaces/@element/ip/pim/bfd/profile": "ip pim bfd profile {/@text}"
 }

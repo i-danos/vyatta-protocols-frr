@@ -1,0 +1,12 @@
+Package: vyatta-frr-vci-dbgsym
+Source: vyatta-protocols-frr
+Version: 1.16.0
+Auto-Built-Package: debug-symbols
+Architecture: amd64
+Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+Installed-Size: 5464
+Depends: vyatta-frr-vci (= 1.16.0)
+Section: contrib/debug
+Priority: optional
+Description: debug symbols for vyatta-frr-vci
+Build-Ids: 8a9367b5e326e517b21a2758a7d83e6b2e1bc4b0

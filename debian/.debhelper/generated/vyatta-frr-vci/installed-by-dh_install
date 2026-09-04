@@ -1,0 +1,13 @@
+./etc/modules-load.d/mpls-modules.conf
+./scripts/frr/command.py
+./scripts/frr/configs/commands
+./scripts/frr/configs/priorities.json
+./scripts/frr/configs/steps.json
+./scripts/frr/parser.py
+debian/tmp/usr/bin/frr
+./etc/modules-load.d/mpls-modules.conf
+./scripts/frr/command.py
+./scripts/frr/configs/commands
+./scripts/frr/configs/priorities.json
+./scripts/frr/configs/steps.json
+./scripts/frr/parser.py

@@ -1,8 +1,10 @@
 {
     "/protocols/bgp/@enter": "!",
-    "/protocols/bgp/@element": ["router bgp {/tagnode/@text}", "no bgp default ipv4-unicast"],
+    "/protocols/bgp/@element": [
+        "router bgp {/tagnode/@text}",
+        "no bgp default ipv4-unicast"
+    ],
     "/protocols/bgp/@element/timers": "timers bgp {/keepalive/@text} {/holdtime/@text}",
-
     "/protocols/bgp/@element/parameters/always-compare-med": "bgp always-compare-med",
     "/protocols/bgp/@element/parameters/bestpath/as-path/confed": "bgp bestpath as-path confed",
     "/protocols/bgp/@element/parameters/bestpath/as-path/ignore": "bgp bestpath as-path ignore",
@@ -21,7 +23,6 @@
     "/protocols/bgp/@element/parameters/log-neighbor-changes": "bgp log-neighbor-changes",
     "/protocols/bgp/@element/parameters/network/import-check": "$if|no,|{/@text} == disabled$ bgp network import-check",
     "/protocols/bgp/@element/parameters/router-id": "bgp router-id {/@text}",
-
     "/protocols/bgp/@element/neighbor/@element/address-family": "neighbor {/../tagnode/@text} peer-group [{/ipv4-unicast/peer-group/@text},{/ipv6-unicast/peer-group/@text}]",
     "/protocols/bgp/@element/neighbor/@element/advertisement-interval": "neighbor {/../tagnode/@text} advertisement-interval {/@text}",
     "/protocols/bgp/@element/neighbor/@element/capability/dynamic": "neighbor {/../../tagnode/@text} capability dynamic",
@@ -43,7 +44,6 @@
     "/protocols/bgp/@element/neighbor/@element/timers": "neighbor {/../tagnode/@text} timers {/keepalive/@text} {/holdtime/@text}",
     "/protocols/bgp/@element/neighbor/@element/ttl-security/hops": "neighbor {/../../tagnode/@text} ttl-security hops {/@text}",
     "/protocols/bgp/@element/neighbor/@element/update-source": "neighbor {/../tagnode/@text} update-source {/@text}",
-
     "/protocols/bgp/@element/address-family/ipv4-unicast/@enter": "address-family ipv4 unicast",
     "/protocols/bgp/@element/address-family/ipv4-unicast/@exit": "exit-address-family",
     "/protocols/bgp/@element/address-family/ipv4-unicast/aggregate-address/@element": "aggregate-address {/tagnode/@text} $if|as-set,summary-only,|as-set in {/@dict}, summary-only in {/@dict}$",
@@ -55,7 +55,6 @@
     "/protocols/bgp/@element/address-family/ipv4-unicast/parameters/dampening": "bgp dampening $if|{/half-life/@text},|half-life in {/@dict}$",
     "/protocols/bgp/@element/address-family/ipv4-unicast/parameters/distance/global": "distance bgp {/external/@text} {/internal/@text} {/local/@text}",
     "/protocols/bgp/@element/address-family/ipv4-unicast/network/@element": "network {/tagnode/@text} [route-map {/route-map/@text},] $if|backdoor,|backdoor in {/@dict}$",
-
     "/protocols/bgp/@element/address-family/ipv6-unicast/@enter": "address-family ipv6 unicast",
     "/protocols/bgp/@element/address-family/ipv6-unicast/@exit": "exit-address-family",
     "/protocols/bgp/@element/address-family/ipv6-unicast/aggregate-address/@element": "aggregate-address {/tagnode/@text} $if|as-set,summary-only,|as-set in {/@dict}, summary-only in {/@dict}$",
@@ -67,7 +66,6 @@
     "/protocols/bgp/@element/address-family/ipv6-unicast/parameters/dampening": "bgp dampening $if|{/half-life/@text},|half-life in {/@dict}$",
     "/protocols/bgp/@element/address-family/ipv6-unicast/parameters/distance/global": "distance bgp {/external/@text} {/internal/@text} {/local/@text}",
     "/protocols/bgp/@element/address-family/ipv6-unicast/network/@element": "network {/tagnode/@text} [route-map {/route-map/@text},]",
-
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv4-unicast/@enter": "address-family ipv4 unicast",
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv4-unicast/@exit": "exit-address-family",
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv4-unicast": "neighbor {/../../tagnode/@text} activate",
@@ -96,7 +94,6 @@
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv4-unicast/route-map/export": "neighbor {/../../../../tagnode/@text} route-map {/@text} out",
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv4-unicast/unsuppress-map": "neighbor {/../../../tagnode/@text} unsuppress-map {/@text}",
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv4-unicast/weight": "neighbor {/../../../tagnode/@text} weight {/@text}",
-
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv6-unicast/@enter": "address-family ipv6 unicast",
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv6-unicast/@exit": "exit-address-family",
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv6-unicast": "neighbor {/../../tagnode/@text} activate",
@@ -125,7 +122,6 @@
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv6-unicast/route-map/export": "neighbor {/../../../../tagnode/@text} route-map {/@text} out",
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv6-unicast/unsuppress-map": "neighbor {/../../../tagnode/@text} unsuppress-map {/@text}",
     "/protocols/bgp/@element/neighbor/@element/address-family/ipv6-unicast/weight": "neighbor {/../../../tagnode/@text} weight {/@text}",
-
     "/protocols/bgp/@element/peer-group/@element": "neighbor {/tagnode/@text} peer-group",
     "/protocols/bgp/@element/peer-group/@element/advertisement-interval": "neighbor {/../tagnode/@text} advertisement-interval {/@text}",
     "/protocols/bgp/@element/peer-group/@element/capability/dynamic": "neighbor {/../../tagnode/@text} capability dynamic",
@@ -147,7 +143,6 @@
     "/protocols/bgp/@element/peer-group/@element/timers": "neighbor {/../tagnode/@text} timers {/keepalive/@text} {/holdtime/@text}",
     "/protocols/bgp/@element/peer-group/@element/ttl-security/hops": "neighbor {/../../tagnode/@text} ttl-security hops {/@text}",
     "/protocols/bgp/@element/peer-group/@element/update-source": "neighbor {/../tagnode/@text} update-source {/@text}",
-
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv4-unicast/@enter": "address-family ipv4 unicast",
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv4-unicast/@exit": "exit-address-family",
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv4-unicast": "neighbor {/../../tagnode/@text} activate",
@@ -176,7 +171,6 @@
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv4-unicast/route-map/export": "neighbor {/../../../../tagnode/@text} route-map {/@text} out",
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv4-unicast/unsuppress-map": "neighbor {/../../../tagnode/@text} unsuppress-map {/@text}",
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv4-unicast/weight": "neighbor {/../../../tagnode/@text} weight {/@text}",
-
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv6-unicast/@enter": "address-family ipv6 unicast",
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv6-unicast/@exit": "exit-address-family",
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv6-unicast": "neighbor {/../../tagnode/@text} activate",
@@ -204,5 +198,8 @@
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv6-unicast/route-map/import": "neighbor {/../../../../tagnode/@text} route-map {/@text} in",
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv6-unicast/route-map/export": "neighbor {/../../../../tagnode/@text} route-map {/@text} out",
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv6-unicast/unsuppress-map": "neighbor {/../../../tagnode/@text} unsuppress-map {/@text}",
-    "/protocols/bgp/@element/peer-group/@element/address-family/ipv6-unicast/weight": "neighbor {/../../../tagnode/@text} weight {/@text}"
+    "/protocols/bgp/@element/peer-group/@element/address-family/ipv6-unicast/weight": "neighbor {/../../../tagnode/@text} weight {/@text}",
+    "/protocols/bgp/@element/neighbor/@element/bfd": "neighbor {/../tagnode/@text} bfd",
+    "/protocols/bgp/@element/neighbor/@element/bfd/profile": "neighbor {/../../tagnode/@text} bfd profile {/@text}",
+    "/protocols/bgp/@element/neighbor/@element/bfd/check-control-plane-failure": "neighbor {/../../tagnode/@text} bfd check-control-plane-failure"
 }

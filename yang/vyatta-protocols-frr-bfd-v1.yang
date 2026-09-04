@@ -1,0 +1,225 @@
+module vyatta-protocols-frr-bfd-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-protocols-frr-bfd:1";
+	prefix protocols-frr-bfd;
+
+	import configd-v1 {
+		prefix configd;
+	}
+
+	import vyatta-types-v1 {
+		prefix types;
+	}
+
+	import vyatta-protocols-v1 {
+		prefix protocols;
+	}
+
+	organization "i-danos";
+	contact
+		"i-danos
+		 Web: https://github.com/i-danos";
+
+	description
+		"Copyright (c) 2026, i-danos. All rights reserved.
+		 Redistribution and use in source and binary forms, with or
+		 without modification, are permitted provided that the following
+		 conditions are met:
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 Bidirectional Forwarding Detection, as bfdd implements it.
+
+		 BFD detects that a forwarding path has failed far faster than the
+		 routing protocol running over it would, by exchanging a lightweight
+		 hello at sub-second intervals. On its own it does nothing: a session
+		 only matters once a protocol is told to watch it, which is what the
+		 'bfd' nodes under BGP, OSPF, OSPFv3, IS-IS and PIM are for.
+
+		 Two ways to configure a session. A profile is a named set of timers
+		 that protocols and peers refer to, which is how BFD is normally
+		 deployed -- the protocol brings the session up and the profile says
+		 how aggressive it should be. A peer is a statically configured
+		 session, useful when there is no protocol to hang it off.
+
+		 Every command generated from this module was taken from the shipping
+		 bfdd, by entering the bfd node in vtysh and listing it, and again
+		 inside a profile and a peer. That node only exists when the daemon is
+		 running; it read as empty here until bfdd=yes was added to
+		 daemons.danos, the same way the pim6 node did.";
+
+	revision 2026-09-04 {
+		description "Initial revision of version 1.";
+	}
+
+	/*
+	 * Groupings
+	 */
+	grouping bfd-session-attributes {
+		description
+			"The timers and modes a session runs with. A profile and a peer
+			take exactly the same set, which is why they share this.
+
+			The intervals are in microseconds, as FRR takes them. That is
+			not a typo for milliseconds: the minimum of 10 is 10us, and a
+			common aggressive setting is 300000, meaning 300ms.";
+
+		leaf detect-multiplier {
+			type uint32 {
+				range 1..255;
+			}
+			configd:help "Missed packets before the session is declared down";
+			description
+				"Detection time is this multiplied by the negotiated
+				interval, so 3 at 300ms detects a failure in under a
+				second.";
+		}
+		leaf transmit-interval {
+			type uint32 {
+				range 10..4294967;
+			}
+			units microseconds;
+			configd:help "Desired transmit interval (microseconds)";
+		}
+		leaf receive-interval {
+			type uint32 {
+				range 10..4294967;
+			}
+			units microseconds;
+			configd:help "Required receive interval (microseconds)";
+		}
+		container echo {
+			configd:help "Echo mode";
+			description
+				"In echo mode the far end loops packets back without its
+				own BFD stack processing them, which tests the forwarding
+				path rather than the control plane.";
+
+			leaf enable {
+				type empty;
+				configd:help "Enable echo mode";
+			}
+			leaf transmit-interval {
+				type uint32 {
+					range 10..4294967;
+				}
+				units microseconds;
+				configd:help "Echo transmit interval (microseconds)";
+			}
+			leaf receive-interval {
+				type uint32 {
+					range 10..4294967;
+				}
+				units microseconds;
+				configd:help "Echo receive interval (microseconds)";
+				description
+					"FRR also accepts the keyword 'disabled' here. That form
+					is not offered: deleting the node expresses the same
+					thing without a magic value.";
+			}
+		}
+		leaf minimum-ttl {
+			type uint32 {
+				range 1..254;
+			}
+			configd:help "Minimum expected TTL on received packets";
+			description
+				"For multihop sessions, rejects packets that have travelled
+				further than expected.";
+		}
+		leaf passive-mode {
+			type empty;
+			configd:help "Wait for the peer to start the session";
+			description
+				"A passive session does not send until it has heard from the
+				far end. Both ends passive means the session never comes
+				up.";
+		}
+		leaf shutdown {
+			type empty;
+			configd:help "Administratively hold the session down";
+		}
+	}
+
+	augment /protocols:protocols {
+		description "BFD augmentation.";
+		container bfd {
+			configd:help "Bidirectional Forwarding Detection (BFD)";
+			presence "Present for BFD configuration.";
+
+			list profile {
+				key "tagnode";
+				configd:help "Named set of session parameters";
+				description
+					"Referred to by name from a protocol's bfd node, or from
+					a static peer. This is the usual way to deploy BFD:
+					protocols create the sessions, the profile says how they
+					behave.";
+
+				leaf tagnode {
+					type string {
+						length 1..64;
+					}
+					configd:help "Profile name";
+				}
+				uses bfd-session-attributes;
+			}
+			list peer {
+				key "tagnode";
+				configd:help "Statically configured BFD session";
+				description
+					"A session configured directly rather than created by a
+					protocol. The peer address alone identifies a single-hop
+					session on a connected subnet; multihop, local-address,
+					interface and routing-instance narrow it further, and
+					FRR treats a different combination as a different
+					session.";
+
+				leaf tagnode {
+					type union {
+						type types:ipv4-address;
+						type types:ipv6-address;
+					}
+					configd:help "Peer address";
+				}
+				leaf multihop {
+					type empty;
+					configd:help "Peer is more than one hop away";
+					must "../local-address" {
+						error-message "A multihop peer needs a local-address";
+					}
+				}
+				leaf local-address {
+					type union {
+						type types:ipv4-address;
+						type types:ipv6-address;
+					}
+					configd:help "Local address to source the session from";
+				}
+				leaf interface {
+					type string;
+					configd:help "Interface the peer is reached through";
+				}
+				leaf routing-instance {
+					type string;
+					configd:help "Routing instance the peer is in";
+				}
+				leaf profile {
+					type leafref {
+						path "../../profile/tagnode";
+					}
+					configd:help "Profile supplying this session's parameters";
+				}
+				uses bfd-session-attributes;
+			}
+		} // container bfd
+	}
+}

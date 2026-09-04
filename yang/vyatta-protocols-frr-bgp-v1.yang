@@ -1406,6 +1406,34 @@ module vyatta-protocols-frr-bgp-v1 {
 				configd:help "BGP neighbor";
 				key "tagnode";
 				uses peer-address;
+				container bfd {
+					configd:help "Bidirectional Forwarding Detection";
+					description
+						"Watch this session with BFD, so a forwarding failure
+						brings the peer down in well under a second instead of
+						waiting for the BGP hold timer.";
+					presence "Present to enable BFD for this neighbor.";
+
+					leaf profile {
+						type string {
+							length 1..64;
+						}
+						configd:help "BFD profile supplying the session parameters";
+						description
+							"Names a profile under 'protocols bfd profile'. Not
+							a leafref: the two are separate modules, and a
+							cross-module leafref would make this one fail to
+							load wherever the BFD module is absent.";
+					}
+					leaf check-control-plane-failure {
+						type empty;
+						configd:help "Treat a control plane failure as a session failure";
+						description
+							"Without this, BFD going down while the peer's
+							control plane is merely restarting will not tear
+							the BGP session down.";
+					}
+				}
 				uses peer-grp-neighbor-common-options {
 					refine strict-capability-match {
 						must "not(../../peer-group[tagnode = current()/../address-family/*/peer-group]/override-capability)" {

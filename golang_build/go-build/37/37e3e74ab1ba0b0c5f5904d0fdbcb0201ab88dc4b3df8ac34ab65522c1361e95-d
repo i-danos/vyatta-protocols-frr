@@ -1,0 +1,10 @@
+./client.go
+./component.go
+./dbus_transport.go
+./doc.go
+./interface.go
+./rfc7951_marshaller.go
+./subscription.go
+./transport.go
+./transport_objects.go
+./utils.go

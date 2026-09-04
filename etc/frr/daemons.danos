@@ -12,6 +12,7 @@ ospf6d=yes
 ldpd=yes
 pimd=yes
 pim6d=yes
+bfdd=yes
 
 zebra_options="  -A 127.0.0.1 -s 90000000 -M dplane_fpm_nl"
 bgpd_options="   -A 127.0.0.1"
@@ -21,3 +22,4 @@ ospf6d_options=" -A ::1"
 ldpd_options="   -A 127.0.0.1"
 pimd_options="   -A 127.0.0.1"
 pim6d_options=" -A ::1"
+bfdd_options="  -A 127.0.0.1"

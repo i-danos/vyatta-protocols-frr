@@ -245,6 +245,26 @@ module vyatta-protocols-frr-pim-v1 {
 				type empty;
 				configd:help "Enable PIM active-active for an MLAG pair";
 			}
+			container bfd {
+				configd:help "Bidirectional Forwarding Detection";
+				description
+					"Watch the PIM adjacency with BFD, so a forwarding failure
+					brings the neighbour down in well under a second instead of
+					waiting for the hello holdtime.";
+				presence "Present to enable BFD on this interface.";
+
+				leaf profile {
+					type string {
+						length 1..64;
+					}
+					configd:help "BFD profile supplying the session parameters";
+					description
+						"Names a profile under 'protocols bfd profile'. Not a
+						leafref: the two are separate modules, and a
+						cross-module leafref would make this one fail to load
+						wherever the BFD module is absent.";
+				}
+			}
 		} // pim
 
 		container igmp {

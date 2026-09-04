@@ -1,0 +1,3 @@
+./component.go
+./daemon.go
+./error.go
