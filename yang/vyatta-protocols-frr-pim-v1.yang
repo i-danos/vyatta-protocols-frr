@@ -108,10 +108,75 @@ module vyatta-protocols-frr-pim-v1 {
 		}
 		description "A type for reference to an IPv4 prefix list.";
 	}
+	typedef access-list-ref {
+		type leafref {
+			path "/policy:policy/policy-route:route/policy-route:access-list/policy-route:tagnode";
+		}
+		description "A type for reference to an access list.";
+	}
 
 	/*
 	 * Groupings
 	 */
+	grouping bsr-source {
+		description
+			"Where a BSR or Auto-RP message sources its address from. FRR
+			takes exactly one of these, so they are a choice rather than
+			four leaves that could be set together.";
+
+		choice source {
+			configd:help "Address to source BSR messages from";
+
+			case address {
+				leaf address {
+					type types:ipv4-address;
+					configd:help "Source from this address";
+				}
+			}
+			case interface {
+				leaf interface {
+					type string;
+					configd:help "Source from this interface's address";
+				}
+			}
+			case loopback {
+				leaf loopback {
+					type empty;
+					configd:help "Source from the loopback address";
+				}
+			}
+			case any {
+				leaf any {
+					type empty;
+					configd:help "Source from any available address";
+				}
+			}
+		}
+	}
+
+	grouping autorp-timers {
+		description
+			"Timing shared by the Auto-RP messages. Scope is deliberately not
+			here: FRR accepts 1-255 on announce and 0-255 on
+			send-rp-discovery, and a shared leaf would have to pick one and
+			be wrong for the other.";
+
+		leaf interval {
+			type uint32 {
+				range 1..65535;
+			}
+			units seconds;
+			configd:help "Announcement interval (seconds)";
+		}
+		leaf holdtime {
+			type uint32 {
+				range 0..65535;
+			}
+			units seconds;
+			configd:help "Announcement hold time (seconds)";
+		}
+	}
+
 	grouping itf-ip-pim {
 		container pim {
 			configd:help "Protocol Independent Multicast (PIM) parameters";
@@ -161,6 +226,25 @@ module vyatta-protocols-frr-pim-v1 {
 					"Overrides the source address PIM puts in the messages it
 					sends on this interface.";
 			}
+			leaf passive {
+				type empty;
+				configd:help "Do not send or receive PIM messages on this interface";
+				description
+					"The interface still carries multicast traffic and can be
+					in an outgoing interface list, but forms no adjacency.";
+			}
+			leaf bsm {
+				type empty;
+				configd:help "Process Bootstrap Router messages on this interface";
+			}
+			leaf unicast-bsm {
+				type empty;
+				configd:help "Accept unicast Bootstrap Router messages on this interface";
+			}
+			leaf active-active {
+				type empty;
+				configd:help "Enable PIM active-active for an MLAG pair";
+			}
 		} // pim
 
 		container igmp {
@@ -170,6 +254,15 @@ module vyatta-protocols-frr-pim-v1 {
 				through it can join multicast groups.";
 			presence "Present to enable IGMP on this interface.";
 
+			leaf version {
+				type uint32 {
+					range 2..3;
+				}
+				configd:help "IGMP version";
+				description
+					"Version 3 is required for source-specific joins, so SSM
+					receivers on this interface need it.";
+			}
 			leaf query-interval {
 				type uint32 {
 					range 1..65535;
@@ -352,6 +445,263 @@ module vyatta-protocols-frr-pim-v1 {
 						"Groups selected by this prefix list are treated as
 						SSM rather than any-source, replacing the default
 						232.0.0.0/8.";
+				}
+			}
+			list ssmpingd {
+				key "tagnode";
+				configd:help "Answer ssmping probes from this source address";
+				description
+					"Starts the ssmping responder, which lets a receiver test
+					whether it can reach a source over SSM.";
+
+				leaf tagnode {
+					type types:ipv4-address;
+					configd:help "Source address to answer on";
+				}
+			}
+			container bsr {
+				configd:help "Bootstrap Router (BSR) parameters";
+				description
+					"BSR distributes RP information through the domain, so
+					routers do not each need a static RP. A candidate-BSR
+					competes to be the domain's bootstrap router; a
+					candidate-RP advertises itself to whichever BSR wins.";
+
+				container candidate-bsr {
+					configd:help "Offer this router as a candidate BSR";
+					presence "Present to be a candidate BSR.";
+
+					leaf priority {
+						type uint32 {
+							range 0..255;
+						}
+						configd:help "Candidate BSR priority, highest wins";
+					}
+					uses bsr-source;
+				}
+				container candidate-rp {
+					configd:help "Offer this router as a candidate RP";
+					presence "Present to be a candidate RP.";
+
+					leaf priority {
+						type uint32 {
+							range 0..255;
+						}
+						configd:help "Candidate RP priority, lowest wins";
+						description
+							"Note the direction: for a candidate RP the lowest
+							priority wins, the opposite of candidate BSR.";
+					}
+					leaf interval {
+						type uint32 {
+							range 1..4294967295;
+						}
+						units seconds;
+						configd:help "Candidate RP advertisement interval (seconds)";
+					}
+					uses bsr-source;
+					list group {
+						key "tagnode";
+						configd:help "Multicast group range to advertise for";
+
+						leaf tagnode {
+							type types:ipv4-prefix;
+							configd:help "Multicast group range";
+						}
+					}
+				}
+			}
+			container autorp {
+				configd:help "Auto-RP parameters";
+				description
+					"Cisco's RP discovery mechanism, which predates BSR and is
+					still met in existing networks. Discovery listens for RP
+					announcements; announce advertises this router as an RP;
+					send-rp-discovery makes this router the mapping agent.";
+
+				leaf discovery {
+					type empty;
+					configd:help "Listen for Auto-RP discovery messages";
+				}
+				container announce {
+					configd:help "Advertise this router as an RP over Auto-RP";
+					presence "Present to announce.";
+
+					list rp-address {
+						key "tagnode";
+						configd:help "RP address to announce";
+
+						leaf tagnode {
+							type types:ipv4-address;
+							configd:help "RP address";
+						}
+						list group {
+							key "tagnode";
+							configd:help "Multicast group range served";
+
+							leaf tagnode {
+								type types:ipv4-prefix;
+								configd:help "Multicast group range";
+							}
+						}
+						leaf group-list {
+							type prefix-list-ref;
+							configd:help "Prefix list selecting the groups served";
+						}
+					}
+					leaf scope {
+						type uint32 {
+							range 1..255;
+						}
+						configd:help "TTL scope of the announcement";
+					}
+					uses autorp-timers;
+				}
+				container send-rp-discovery {
+					configd:help "Act as the Auto-RP mapping agent";
+					presence "Present to send discovery messages.";
+
+					uses bsr-source;
+					leaf scope {
+						type uint32 {
+							range 0..255;
+						}
+						configd:help "TTL scope of the discovery message";
+					}
+					uses autorp-timers;
+				}
+			}
+			container msdp {
+				configd:help "Multicast Source Discovery Protocol (MSDP)";
+				description
+					"MSDP lets RPs in different domains tell each other about
+					active sources, so a receiver in one domain can join a
+					source in another. Peers are configured directly, or in a
+					mesh group where every member is implicitly peered.";
+
+				leaf shutdown {
+					type empty;
+					configd:help "Administratively disable MSDP";
+				}
+				leaf originator-id {
+					type types:ipv4-address;
+					configd:help "Address to place in the RP field of originated SA messages";
+				}
+				container log {
+					configd:help "MSDP event logging";
+
+					leaf neighbor-events {
+						type empty;
+						configd:help "Log neighbour state changes";
+					}
+					leaf sa-events {
+						type empty;
+						configd:help "Log Source-Active message events";
+					}
+				}
+				container timers {
+					configd:help "MSDP timers";
+					description
+						"FRR takes these as one positional command, so the
+						first two are required together and the third is
+						optional. The must below enforces that rather than
+						letting a half-filled container generate a malformed
+						line.";
+					presence "Present to override the MSDP timers.";
+					must "keep-alive and hold-time" {
+						error-message "MSDP timers keep-alive and hold-time must both be set";
+					}
+
+					leaf keep-alive {
+						type uint32 {
+							range 1..65535;
+						}
+						units seconds;
+						configd:help "Keepalive interval (seconds)";
+					}
+					leaf hold-time {
+						type uint32 {
+							range 1..65535;
+						}
+						units seconds;
+						configd:help "Hold time (seconds)";
+					}
+					leaf connection-retry {
+						type uint32 {
+							range 1..65535;
+						}
+						units seconds;
+						configd:help "Connection retry interval (seconds)";
+					}
+				}
+				list peer {
+					key "tagnode";
+					configd:help "MSDP peer";
+					must "source-address" {
+						error-message "An MSDP peer needs a source-address";
+					}
+
+					leaf tagnode {
+						type types:ipv4-address;
+						configd:help "Peer address";
+					}
+					leaf source-address {
+						type types:ipv4-address;
+						configd:help "Local address to peer from";
+					}
+					leaf password {
+						type string {
+							length 1..80;
+						}
+						configd:secret "true";
+						configd:help "MD5 password for the peer session";
+					}
+					leaf sa-limit {
+						type uint32 {
+							range 1..4294967294;
+						}
+						configd:help "Maximum number of SA entries accepted from this peer";
+					}
+					container sa-filter {
+						configd:help "Filter Source-Active messages by access list";
+
+						leaf in {
+							type access-list-ref;
+							configd:help "Access list applied to received SA messages";
+						}
+						leaf out {
+							type access-list-ref;
+							configd:help "Access list applied to originated SA messages";
+						}
+					}
+				}
+				list mesh-group {
+					key "tagnode";
+					configd:help "MSDP mesh group";
+					description
+						"Every member of a mesh group is peered with every
+						other, and an SA learned from one member is not
+						reflected back to the others.";
+
+					leaf tagnode {
+						type string {
+							length 1..64;
+						}
+						configd:help "Mesh group name";
+					}
+					leaf source-address {
+						type types:ipv4-address;
+						configd:help "Local address to peer from";
+					}
+					list member {
+						key "tagnode";
+						configd:help "Mesh group member";
+
+						leaf tagnode {
+							type types:ipv4-address;
+							configd:help "Member address";
+						}
+					}
 				}
 			}
 		} // container pim
