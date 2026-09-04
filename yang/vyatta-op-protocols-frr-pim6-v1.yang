@@ -1,0 +1,195 @@
+module vyatta-op-protocols-frr-pim6-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-op-pim6-1";
+	prefix vyatta-op-protocols-frr-pim6-v1;
+
+	import vyatta-types-v1 {
+		prefix types;
+	}
+	import vyatta-opd-extensions-v1 {
+		prefix opd;
+	}
+	import vyatta-op-show-v1 {
+		prefix op-show;
+	}
+	import vyatta-op-show-protocols-v1 {
+		prefix op-show-protocols;
+	}
+
+	organization "i-danos";
+	contact
+		"i-danos
+		 Web: https://github.com/i-danos";
+
+	description
+		"Copyright (c) 2026, i-danos. All rights reserved.
+		 Redistribution and use in source and binary forms, with or
+		 without modification, are permitted provided that the following
+		 conditions are met:
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 Operational commands for IPv6 PIM and MLD.
+
+		 These sit under 'show protocols pim6' and 'show protocols mld',
+		 alongside the IPv4 'show protocols pim' and 'show protocols igmp'.
+		 Every command was taken from the shipping pim6d rather than written
+		 from the IPv4 set, because the two are not the same: pim6d has no
+		 MSDP and no Auto-RP, and its BSR output is reached through
+		 'bsrp-info' where IPv4 uses 'bsr rp-info'.";
+
+	revision 2026-09-04 {
+		description "Initial revision";
+	}
+
+	opd:augment /op-show:show/op-show-protocols:protocols {
+		opd:command pim6 {
+			opd:help "Show IPv6 PIM information";
+
+			opd:command interface {
+				opd:help "PIM interface information";
+				opd:on-enter 'vtysh -c "show ipv6 pim interface"';
+				opd:privileged true;
+
+				opd:command detail {
+					opd:help "Show detailed information";
+					opd:on-enter 'vtysh -c "show ipv6 pim interface detail"';
+					opd:privileged true;
+				}
+			}
+			opd:command neighbor {
+				opd:help "PIM neighbor information";
+				opd:on-enter 'vtysh -c "show ipv6 pim neighbor"';
+				opd:privileged true;
+
+				opd:command detail {
+					opd:help "Show detailed information";
+					opd:on-enter 'vtysh -c "show ipv6 pim neighbor detail"';
+					opd:privileged true;
+				}
+			}
+			opd:command join {
+				opd:help "PIM join information";
+				opd:on-enter 'vtysh -c "show ipv6 pim join"';
+				opd:privileged true;
+			}
+			opd:command state {
+				opd:help "PIM state, including the outgoing interface list";
+				opd:on-enter 'vtysh -c "show ipv6 pim state"';
+				opd:privileged true;
+			}
+			opd:command upstream {
+				opd:help "PIM upstream information";
+				opd:on-enter 'vtysh -c "show ipv6 pim upstream"';
+				opd:privileged true;
+			}
+			opd:command rp-info {
+				opd:help "Rendezvous Point information";
+				opd:on-enter 'vtysh -c "show ipv6 pim rp-info"';
+				opd:privileged true;
+			}
+			opd:command rpf {
+				opd:help "Reverse Path Forwarding information";
+				opd:on-enter 'vtysh -c "show ipv6 pim rpf"';
+				opd:privileged true;
+			}
+			opd:command channel {
+				opd:help "PIM channel information";
+				opd:on-enter 'vtysh -c "show ipv6 pim channel"';
+				opd:privileged true;
+			}
+			opd:command bsr {
+				opd:help "Bootstrap Router information";
+				opd:on-enter 'vtysh -c "show ipv6 pim bsr"';
+				opd:privileged true;
+
+				opd:command candidate-bsr {
+					opd:help "Candidate BSR information";
+					opd:on-enter 'vtysh -c "show ipv6 pim bsr candidate-bsr"';
+					opd:privileged true;
+				}
+				opd:command candidate-rp {
+					opd:help "Candidate RP information";
+					opd:on-enter 'vtysh -c "show ipv6 pim bsr candidate-rp"';
+					opd:privileged true;
+				}
+				opd:command groups {
+					opd:help "Group ranges learned through BSR";
+					opd:on-enter 'vtysh -c "show ipv6 pim bsr groups"';
+					opd:privileged true;
+				}
+			}
+			opd:command bsrp-info {
+				opd:help "RP information learned through BSR";
+				opd:on-enter 'vtysh -c "show ipv6 pim bsrp-info"';
+				opd:privileged true;
+			}
+			opd:command bsm-database {
+				opd:help "Bootstrap message database";
+				opd:on-enter 'vtysh -c "show ipv6 pim bsm-database"';
+				opd:privileged true;
+			}
+			opd:command mroute {
+				opd:help "IPv6 multicast routing table";
+				opd:on-enter 'vtysh -c "show ipv6 mroute"';
+				opd:privileged true;
+
+				opd:command count {
+					opd:help "Show packet and byte counts";
+					opd:on-enter 'vtysh -c "show ipv6 mroute count"';
+					opd:privileged true;
+				}
+				opd:command summary {
+					opd:help "Show a summary";
+					opd:on-enter 'vtysh -c "show ipv6 mroute summary"';
+					opd:privileged true;
+				}
+			}
+		}
+
+		opd:command mld {
+			opd:help "Show MLD information";
+
+			opd:command interface {
+				opd:help "MLD interface information";
+				opd:on-enter 'vtysh -c "show ipv6 mld interface"';
+				opd:privileged true;
+
+				opd:command detail {
+					opd:help "Show detailed information";
+					opd:on-enter 'vtysh -c "show ipv6 mld interface detail"';
+					opd:privileged true;
+				}
+			}
+			opd:command groups {
+				opd:help "Groups receivers have joined";
+				opd:on-enter 'vtysh -c "show ipv6 mld groups"';
+				opd:privileged true;
+			}
+			opd:command joins {
+				opd:help "MLD joins";
+				opd:on-enter 'vtysh -c "show ipv6 mld joins"';
+				opd:privileged true;
+
+				opd:command detail {
+					opd:help "Show detailed information";
+					opd:on-enter 'vtysh -c "show ipv6 mld joins detail"';
+					opd:privileged true;
+				}
+			}
+			opd:command statistics {
+				opd:help "MLD statistics";
+				opd:on-enter 'vtysh -c "show ipv6 mld statistics"';
+				opd:privileged true;
+			}
+		}
+	}
+}

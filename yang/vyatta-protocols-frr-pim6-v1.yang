@@ -1,0 +1,459 @@
+module vyatta-protocols-frr-pim6-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-protocols-frr-pim6:1";
+	prefix protocols-frr-pim6;
+
+	import configd-v1 {
+		prefix configd;
+	}
+
+	import vyatta-types-v1 {
+		prefix types;
+	}
+
+	import vyatta-policy-v1 {
+		prefix policy;
+	}
+
+	import vyatta-policy-route-v1 {
+		prefix policy-route;
+	}
+
+	import vyatta-protocols-v1 {
+		prefix protocols;
+	}
+
+	import vyatta-interfaces-v1 {
+		prefix if;
+	}
+
+	import vyatta-interfaces-bridge-v1 {
+		prefix interfaces-bridge;
+	}
+
+	import vyatta-interfaces-dataplane-v1 {
+		prefix interfaces-dataplane;
+	}
+
+	import vyatta-interfaces-bonding-v1 {
+		prefix interfaces-bonding;
+	}
+
+	import vyatta-interfaces-loopback-v1 {
+		prefix interfaces-loopback;
+	}
+
+	import vyatta-interfaces-tunnel-v1 {
+		prefix interfaces-tunnel;
+	}
+
+	import vyatta-interfaces-vti-v1 {
+		prefix interfaces-vti;
+	}
+
+	organization "i-danos";
+	contact
+		"i-danos
+		 Web: https://github.com/i-danos";
+
+	description
+		"Copyright (c) 2026, i-danos. All rights reserved.
+		 Redistribution and use in source and binary forms, with or
+		 without modification, are permitted provided that the following
+		 conditions are met:
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 PIM Sparse Mode and MLD for IPv6, as pim6d implements them.
+
+		 This is a separate module from the IPv4 one because the two
+		 protocols are not the same shape, and a shared model would have to
+		 pretend otherwise. pim6d has no MSDP and no Auto-RP: an IPv6
+		 domain learns about out-of-domain sources through embedded RP,
+		 where the RP address is carried inside the group address itself,
+		 rather than through RPs telling each other. It also has no
+		 ssm prefix-list, no ECMP controls and no rpf-lookup-mode.
+
+		 What it does share is a statically configured RP, BSR, and the
+		 same timers. Those are modelled the same way as in
+		 vyatta-protocols-frr-pim-v1 so the two read alike where they are
+		 alike.
+
+		 Every command generated from this module was taken from the
+		 shipping pim6d, by entering the router pim6 node in vtysh and
+		 listing it. That node only exists when pim6d is running, so it
+		 reads as empty if the daemon is not enabled -- which is what it
+		 did here until pim6d=yes was added to daemons.danos.";
+
+	revision 2026-09-04 {
+		description "Initial revision of version 1.";
+	}
+
+	/*
+	 * Typedefs
+	 */
+	typedef prefix-list6-ref {
+		type leafref {
+			path "/policy:policy/policy-route:route/policy-route:prefix-list6/policy-route:tagnode";
+		}
+		description "A type for reference to an IPv6 prefix list.";
+	}
+
+	/*
+	 * Groupings
+	 */
+	grouping bsr6-source {
+		description
+			"Where a BSR message sources its address from. FRR takes exactly
+			one of these, so they are a choice rather than four leaves that
+			could be set together.";
+
+		choice source {
+			configd:help "Address to source BSR messages from";
+
+			case address {
+				leaf address {
+					type types:ipv6-address;
+					configd:help "Source from this address";
+				}
+			}
+			case interface {
+				leaf interface {
+					type string;
+					configd:help "Source from this interface's address";
+				}
+			}
+			case loopback {
+				leaf loopback {
+					type empty;
+					configd:help "Source from the loopback address";
+				}
+			}
+			case any {
+				leaf any {
+					type empty;
+					configd:help "Source from any available address";
+				}
+			}
+		}
+	}
+
+	grouping itf-ipv6-pim6 {
+		container pim {
+			configd:help "Protocol Independent Multicast (PIM) parameters";
+			description
+				"Enables PIM for IPv6 on this interface, so it can carry
+				multicast traffic and form adjacencies with PIM neighbours.";
+			presence "Present to enable PIM on this interface.";
+
+			leaf hello-interval {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "Hello interval (seconds)";
+			}
+			leaf hello-holdtime {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "Hello hold time (seconds)";
+				description
+					"FRR takes the hold time as a positional argument after the
+					interval, so it cannot be set on its own.";
+				must "../hello-interval" {
+					error-message "PIM hello-holdtime needs hello-interval";
+				}
+			}
+			leaf dr-priority {
+				type uint32 {
+					range 0..4294967295;
+				}
+				configd:help "Designated Router priority";
+			}
+			leaf passive {
+				type empty;
+				configd:help "Do not send or receive PIM messages on this interface";
+			}
+			leaf bsm {
+				type empty;
+				configd:help "Process Bootstrap Router messages on this interface";
+			}
+			leaf unicast-bsm {
+				type empty;
+				configd:help "Accept unicast Bootstrap Router messages on this interface";
+			}
+			leaf active-active {
+				type empty;
+				configd:help "Enable PIM active-active for an MLAG pair";
+			}
+		} // pim
+
+		container mld {
+			configd:help "Multicast Listener Discovery (MLD) parameters";
+			description
+				"MLD is what IGMP is for IPv4: it is how receivers reached
+				through this interface say which groups they want.";
+			presence "Present to enable MLD on this interface.";
+
+			leaf version {
+				type uint32 {
+					range 1..2;
+				}
+				configd:help "MLD version";
+				description
+					"Version 2 is required for source-specific joins, so SSM
+					receivers on this interface need it.";
+			}
+			leaf query-interval {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "Query interval (seconds)";
+			}
+			leaf query-max-response-time {
+				type uint32 {
+					range 1..65535;
+				}
+				units deciseconds;
+				configd:help "Maximum query response time (deciseconds)";
+			}
+			leaf last-member-query-count {
+				type uint32 {
+					range 1..255;
+				}
+				configd:help "Last member query count";
+			}
+			leaf last-member-query-interval {
+				type uint32 {
+					range 1..65535;
+				}
+				units deciseconds;
+				configd:help "Last member query interval (deciseconds)";
+			}
+			list join-group {
+				key "tagnode";
+				configd:help "Join a multicast group on this interface";
+				description
+					"Makes the router itself a receiver for the group, which is
+					how a group is tested without a host behind the interface.";
+
+				leaf tagnode {
+					type types:ipv6-address;
+					configd:help "Multicast group address";
+				}
+				leaf source {
+					type types:ipv6-address;
+					configd:help "Source address, for a source-specific join";
+				}
+			}
+			list static-group {
+				key "tagnode";
+				configd:help "Statically forward a group out of this interface";
+
+				leaf tagnode {
+					type types:ipv6-address;
+					configd:help "Multicast group address";
+				}
+				leaf source {
+					type types:ipv6-address;
+					configd:help "Source address, for a source-specific entry";
+				}
+			}
+		} // mld
+	} // itf-ipv6-pim6
+
+	augment /protocols:protocols {
+		description "PIM for IPv6 augmentation.";
+		container pim6 {
+			configd:help "Protocol Independent Multicast for IPv6 (PIM6)";
+			presence "Present for IPv6 PIM configuration.";
+
+			list rp {
+				key "tagnode";
+				configd:help "Rendezvous Point";
+				description
+					"A statically configured Rendezvous Point. Either list the
+					group ranges it serves, or point it at a prefix list.";
+
+				leaf tagnode {
+					type types:ipv6-address;
+					configd:help "Rendezvous Point address";
+				}
+				list group {
+					key "tagnode";
+					configd:help "Multicast group range served by this RP";
+
+					leaf tagnode {
+						type types:ipv6-prefix;
+						configd:help "Multicast group range";
+					}
+				}
+				leaf prefix-list {
+					type prefix-list6-ref;
+					configd:help "Prefix list selecting the groups served by this RP";
+				}
+			}
+			container embedded-rp {
+				configd:help "Embedded RP";
+				description
+					"IPv6 can carry the RP address inside the group address
+					itself, so a receiver can find the RP for a group with no
+					RP configuration and no BSR. This is the mechanism IPv6
+					has instead of MSDP.";
+				presence "Present to enable embedded RP.";
+
+				leaf group-list {
+					type prefix-list6-ref;
+					configd:help "Prefix list restricting which groups embedded RP is accepted for";
+				}
+				leaf limit {
+					type uint32 {
+						range 1..4294967295;
+					}
+					configd:help "Maximum number of embedded RPs learned";
+				}
+			}
+			leaf keep-alive-timer {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "(S,G) keep alive timer (seconds)";
+			}
+			leaf rp-keep-alive-timer {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "(S,G) keep alive timer at the RP (seconds)";
+			}
+			leaf join-prune-interval {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "Join/Prune send interval (seconds)";
+			}
+			leaf packets {
+				type uint32 {
+					range 1..255;
+				}
+				configd:help "Number of packets processed at once";
+			}
+			leaf register-suppress-time {
+				type uint32 {
+					range 1..65535;
+				}
+				units seconds;
+				configd:help "Register suppression time (seconds)";
+			}
+			container spt-switchover {
+				configd:help "Shortest Path Tree switchover behaviour";
+
+				container infinity-and-beyond {
+					configd:help "Never switch over to the Shortest Path Tree";
+					presence "Present to stay on the shared tree.";
+
+					leaf prefix-list {
+						type prefix-list6-ref;
+						configd:help "Restrict the behaviour to the groups this prefix list selects";
+					}
+				}
+			}
+			list ssmpingd {
+				key "tagnode";
+				configd:help "Answer ssmping probes from this source address";
+
+				leaf tagnode {
+					type types:ipv6-address;
+					configd:help "Source address to answer on";
+				}
+			}
+			container bsr {
+				configd:help "Bootstrap Router (BSR) parameters";
+
+				container candidate-bsr {
+					configd:help "Offer this router as a candidate BSR";
+					presence "Present to be a candidate BSR.";
+
+					leaf priority {
+						type uint32 {
+							range 0..255;
+						}
+						configd:help "Candidate BSR priority, highest wins";
+					}
+					uses bsr6-source;
+				}
+				container candidate-rp {
+					configd:help "Offer this router as a candidate RP";
+					presence "Present to be a candidate RP.";
+
+					leaf priority {
+						type uint32 {
+							range 0..255;
+						}
+						configd:help "Candidate RP priority, lowest wins";
+					}
+					leaf interval {
+						type uint32 {
+							range 1..4294967295;
+						}
+						units seconds;
+						configd:help "Candidate RP advertisement interval (seconds)";
+					}
+					uses bsr6-source;
+					list group {
+						key "tagnode";
+						configd:help "Multicast group range to advertise for";
+
+						leaf tagnode {
+							type types:ipv6-prefix;
+							configd:help "Multicast group range";
+						}
+					}
+				}
+			}
+		} // container pim6
+	}
+
+	/*
+	 * PIM6 and MLD are offered on the same interface types as the IPv4
+	 * module, which is the established set in this package for a protocol
+	 * that runs on any routed interface.
+	 */
+	augment /if:interfaces/interfaces-bridge:bridge/interfaces-bridge:ipv6 {
+		uses itf-ipv6-pim6;
+	}
+	augment /if:interfaces/interfaces-dataplane:dataplane/interfaces-dataplane:ipv6 {
+		uses itf-ipv6-pim6;
+	}
+	augment /if:interfaces/interfaces-dataplane:dataplane/interfaces-dataplane:vif/interfaces-dataplane:ipv6 {
+		uses itf-ipv6-pim6;
+	}
+	augment /if:interfaces/interfaces-bonding:bonding/interfaces-bonding:ipv6 {
+		uses itf-ipv6-pim6;
+	}
+	augment /if:interfaces/interfaces-bonding:bonding/interfaces-bonding:vif/interfaces-bonding:ipv6 {
+		uses itf-ipv6-pim6;
+	}
+	augment /if:interfaces/interfaces-loopback:loopback/interfaces-loopback:ipv6 {
+		uses itf-ipv6-pim6;
+	}
+	augment /if:interfaces/interfaces-tunnel:tunnel/interfaces-tunnel:ipv6 {
+		uses itf-ipv6-pim6;
+	}
+	augment /if:interfaces/interfaces-vti:vti/interfaces-vti:ipv6 {
+		uses itf-ipv6-pim6;
+	}
+}
