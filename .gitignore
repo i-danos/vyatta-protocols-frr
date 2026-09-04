@@ -10,3 +10,5 @@ debian/*.debhelper.log
 debian/*.substvars
 debian/*-yang
 golang_build/
+debian/*.debhelper
+debian/.debhelper/
