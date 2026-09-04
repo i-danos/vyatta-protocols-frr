@@ -9,3 +9,4 @@ debian/vyatta-protocols-frr
 debian/*.debhelper.log
 debian/*.substvars
 debian/*-yang
+golang_build/
