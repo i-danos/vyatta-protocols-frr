@@ -214,5 +214,6 @@
     "/protocols/bgp/@element/neighbor/@element/address-family/vpnv4-unicast/soft-reconfiguration-inbound": " neighbor {/../../../tagnode/@text} soft-reconfiguration inbound",
     "/protocols/bgp/@element/peer-group/@element/address-family/vpnv4-unicast/@enter": "address-family ipv4 vpn",
     "/protocols/bgp/@element/peer-group/@element/address-family/vpnv4-unicast/@exit": "exit-address-family",
-    "/protocols/bgp/@element/peer-group/@element/address-family/vpnv4-unicast": " neighbor {/../../tagnode/@text} activate"
+    "/protocols/bgp/@element/peer-group/@element/address-family/vpnv4-unicast": " neighbor {/../../tagnode/@text} activate",
+    "/protocols/bgp/@element/@exit": "exit"
 }
