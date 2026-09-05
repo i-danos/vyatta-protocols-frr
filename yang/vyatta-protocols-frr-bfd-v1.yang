@@ -68,9 +68,11 @@ module vyatta-protocols-frr-bfd-v1 {
 			"The timers and modes a session runs with. A profile and a peer
 			take exactly the same set, which is why they share this.
 
-			The intervals are in microseconds, as FRR takes them. That is
-			not a typo for milliseconds: the minimum of 10 is 10us, and a
-			common aggressive setting is 300000, meaning 300ms.";
+			The intervals are in milliseconds. FRR's range of 10 to 4294967
+			is the giveaway -- as microseconds that would cap out at 4.3
+			seconds, which is no use to anyone; as milliseconds it runs from
+			10ms to about 49 days. A common aggressive setting is 300, with
+			a multiplier of 3, detecting a failure in under a second.";
 
 		leaf detect-multiplier {
 			type uint32 {
@@ -86,15 +88,15 @@ module vyatta-protocols-frr-bfd-v1 {
 			type uint32 {
 				range 10..4294967;
 			}
-			units microseconds;
-			configd:help "Desired transmit interval (microseconds)";
+			units milliseconds;
+			configd:help "Desired transmit interval (milliseconds)";
 		}
 		leaf receive-interval {
 			type uint32 {
 				range 10..4294967;
 			}
-			units microseconds;
-			configd:help "Required receive interval (microseconds)";
+			units milliseconds;
+			configd:help "Required receive interval (milliseconds)";
 		}
 		container echo {
 			configd:help "Echo mode";
@@ -111,15 +113,15 @@ module vyatta-protocols-frr-bfd-v1 {
 				type uint32 {
 					range 10..4294967;
 				}
-				units microseconds;
-				configd:help "Echo transmit interval (microseconds)";
+				units milliseconds;
+				configd:help "Echo transmit interval (milliseconds)";
 			}
 			leaf receive-interval {
 				type uint32 {
 					range 10..4294967;
 				}
-				units microseconds;
-				configd:help "Echo receive interval (microseconds)";
+				units milliseconds;
+				configd:help "Echo receive interval (milliseconds)";
 				description
 					"FRR also accepts the keyword 'disabled' here. That form
 					is not offered: deleting the node expresses the same
