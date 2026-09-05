@@ -201,5 +201,18 @@
     "/protocols/bgp/@element/peer-group/@element/address-family/ipv6-unicast/weight": "neighbor {/../../../tagnode/@text} weight {/@text}",
     "/protocols/bgp/@element/neighbor/@element/bfd": "neighbor {/../tagnode/@text} bfd",
     "/protocols/bgp/@element/neighbor/@element/bfd/profile": "neighbor {/../../tagnode/@text} bfd profile {/@text}",
-    "/protocols/bgp/@element/neighbor/@element/bfd/check-control-plane-failure": "neighbor {/../../tagnode/@text} bfd check-control-plane-failure"
+    "/protocols/bgp/@element/neighbor/@element/bfd/check-control-plane-failure": "neighbor {/../../tagnode/@text} bfd check-control-plane-failure",
+    "/protocols/bgp/@element/address-family/vpnv4-unicast/@enter": "address-family ipv4 vpn",
+    "/protocols/bgp/@element/address-family/vpnv4-unicast/@exit": "exit-address-family",
+    "/protocols/bgp/@element/address-family/vpnv4-unicast/retain-route-target-all": " bgp retain route-target all",
+    "/protocols/bgp/@element/neighbor/@element/address-family/vpnv4-unicast/@enter": "address-family ipv4 vpn",
+    "/protocols/bgp/@element/neighbor/@element/address-family/vpnv4-unicast/@exit": "exit-address-family",
+    "/protocols/bgp/@element/neighbor/@element/address-family/vpnv4-unicast": " neighbor {/../../tagnode/@text} activate",
+    "/protocols/bgp/@element/neighbor/@element/address-family/vpnv4-unicast/next-hop-self": " neighbor {/../../../tagnode/@text} next-hop-self",
+    "/protocols/bgp/@element/neighbor/@element/address-family/vpnv4-unicast/next-hop-self-force": " neighbor {/../../../tagnode/@text} next-hop-self force",
+    "/protocols/bgp/@element/neighbor/@element/address-family/vpnv4-unicast/route-reflector-client": " neighbor {/../../../tagnode/@text} route-reflector-client",
+    "/protocols/bgp/@element/neighbor/@element/address-family/vpnv4-unicast/soft-reconfiguration-inbound": " neighbor {/../../../tagnode/@text} soft-reconfiguration inbound",
+    "/protocols/bgp/@element/peer-group/@element/address-family/vpnv4-unicast/@enter": "address-family ipv4 vpn",
+    "/protocols/bgp/@element/peer-group/@element/address-family/vpnv4-unicast/@exit": "exit-address-family",
+    "/protocols/bgp/@element/peer-group/@element/address-family/vpnv4-unicast": " neighbor {/../../tagnode/@text} activate"
 }

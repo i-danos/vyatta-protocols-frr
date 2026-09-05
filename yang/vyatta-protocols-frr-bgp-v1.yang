@@ -1338,6 +1338,38 @@ module vyatta-protocols-frr-bgp-v1 {
 						}
 						uses neigh_peer_grp_ipv4_lists;
 					}
+					container vpnv4-unicast {
+						description
+							"Carries VPN-IPv4 routes to this neighbour, which is
+							what makes an MPLS L3VPN work: the VRFs tag their
+							routes with a route distinguisher and route targets,
+							and this session is how those tagged routes reach the
+							other PE. Without it a VRF can be fully configured
+							and still exchange nothing.";
+						presence "Enables the VPN-IPv4 address family for this neighbor";
+						configd:help "VPN-IPv4 parameters";
+
+						leaf next-hop-self {
+							type empty;
+							configd:help "Advertise this router as the nexthop";
+						}
+						leaf next-hop-self-force {
+							type empty;
+							configd:help "Advertise this router as the nexthop, overriding an existing one";
+							must "not(../next-hop-self)" {
+								error-message "next-hop-self-force already implies next-hop-self";
+							}
+						}
+						leaf route-reflector-client {
+							type empty;
+							configd:help "Treat this neighbor as a route reflector client";
+						}
+						leaf soft-reconfiguration-inbound {
+							type empty;
+							configd:help "Keep received routes so policy can be reapplied without a reset";
+						}
+					}
+
 					container ipv6-unicast {
 						description "BGP peer-group IPv6 unicast parameters";
 						presence "Enables BGP peer-group IPv6 unicast parameters";
@@ -1596,6 +1628,38 @@ module vyatta-protocols-frr-bgp-v1 {
 							}
 						}
                                         }
+					container vpnv4-unicast {
+						description
+							"Carries VPN-IPv4 routes to this neighbour, which is
+							what makes an MPLS L3VPN work: the VRFs tag their
+							routes with a route distinguisher and route targets,
+							and this session is how those tagged routes reach the
+							other PE. Without it a VRF can be fully configured
+							and still exchange nothing.";
+						presence "Enables the VPN-IPv4 address family for this neighbor";
+						configd:help "VPN-IPv4 parameters";
+
+						leaf next-hop-self {
+							type empty;
+							configd:help "Advertise this router as the nexthop";
+						}
+						leaf next-hop-self-force {
+							type empty;
+							configd:help "Advertise this router as the nexthop, overriding an existing one";
+							must "not(../next-hop-self)" {
+								error-message "next-hop-self-force already implies next-hop-self";
+							}
+						}
+						leaf route-reflector-client {
+							type empty;
+							configd:help "Treat this neighbor as a route reflector client";
+						}
+						leaf soft-reconfiguration-inbound {
+							type empty;
+							configd:help "Keep received routes so policy can be reapplied without a reset";
+						}
+					}
+
 					container ipv6-unicast {
 						description "BGP neighbor parameters";
 						presence "Enables BGP neighbor IPv6 parameters";
@@ -1705,6 +1769,28 @@ module vyatta-protocols-frr-bgp-v1 {
 					uses network-ipv4;
 					uses redistribute-ipv4;
 				}
+				container vpnv4-unicast {
+					description
+						"The global VPN-IPv4 table. Routing instances feed it
+						through their own import vpn and export vpn, and the
+						neighbours activated here are how it crosses to the
+						other PE. This container is what emits the
+						'address-family ipv4 vpn' block; without it the
+						per-VRF route distinguisher and route targets have
+						nowhere to go.";
+					presence "Enables the VPN-IPv4 address family";
+					configd:help "VPN-IPv4 settings";
+
+					leaf retain-route-target-all {
+						type empty;
+						configd:help "Keep received routes whose route targets match no local VRF";
+						description
+							"Normally a PE discards a VPN route no local VRF
+							wants. A route reflector has to keep them, because
+							it reflects for VRFs it does not itself hold.";
+					}
+				}
+
 				container ipv6-unicast {
 					description "Enable BGP IPv6 settings";
 					presence "Enables BGP IPv6 settings";
