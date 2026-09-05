@@ -1,0 +1,37 @@
+{
+    "/protocols/rip/@enter": "!",
+    "/protocols/rip": "router rip",
+    "/protocols/rip/@exit": "exit",
+
+    "/protocols/rip/network/@element": " network {/tagnode/@text}",
+    "/protocols/rip/interface/@element": " network {/tagnode/@text}",
+    "/protocols/rip/neighbor/@element": " neighbor {/tagnode/@text}",
+    "/protocols/rip/route/@element": " route {/tagnode/@text}",
+    "/protocols/rip/version": " version {/@text}",
+    "/protocols/rip/default-metric": " default-metric {/@text}",
+    "/protocols/rip/default-information-originate": " default-information originate",
+    "/protocols/rip/distance": " distance {/@text}",
+    "/protocols/rip/allow-ecmp": " allow-ecmp {/@text}",
+    "/protocols/rip/bfd/default-profile": " bfd default-profile {/@text}",
+    "/protocols/rip/timers": " timers basic {/update/@text} {/timeout/@text} {/garbage-collection/@text}",
+
+    "/protocols/rip/passive-interface/default": " passive-interface default",
+    "/protocols/rip/passive-interface/interface/@element": " passive-interface {/tagnode/@text}",
+
+    "/protocols/rip/redistribute/@element": " redistribute {/tagnode/@text} [metric {/metric/@text},] [route-map {/route-map/@text},]",
+
+    "/protocols/rip/distribute-list/in": " distribute-list {/@text} in",
+    "/protocols/rip/distribute-list/out": " distribute-list {/@text} out",
+    "/protocols/rip/distribute-list/prefix/in": " distribute-list prefix {/@text} in",
+    "/protocols/rip/distribute-list/prefix/out": " distribute-list prefix {/@text} out",
+
+    "/interfaces/@element/ip/rip/authentication/mode": "ip rip authentication mode {/@text}",
+    "/interfaces/@element/ip/rip/authentication/string": "ip rip authentication string {/@text}",
+    "/interfaces/@element/ip/rip/authentication/key-chain": "ip rip authentication key-chain {/@text}",
+    "/interfaces/@element/ip/rip/send/version": "ip rip send version {/@text}",
+    "/interfaces/@element/ip/rip/receive/version": "ip rip receive version {/@text}",
+    "/interfaces/@element/ip/rip/split-horizon": "ip rip split-horizon $if|poisoned-reverse,|poisoned-reverse in {/@dict}$",
+    "/interfaces/@element/ip/rip/v2-broadcast": "ip rip v2-broadcast",
+    "/interfaces/@element/ip/rip/bfd": "ip rip bfd",
+    "/interfaces/@element/ip/rip/bfd/profile": "ip rip bfd profile {/@text}"
+}

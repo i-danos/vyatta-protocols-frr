@@ -7,6 +7,7 @@ vyatta-protocols-frr (1.16.0) unstable; urgency=medium
   * PIM: add BSR, Auto-RP, MSDP and SSM, and emit a router pim block
   * Add a CLI for IPv6 PIM and MLD, and enable pim6d
   * Add a CLI for BFD, and hook it into BGP, OSPF, OSPFv3 and PIM
+  * Add a CLI for RIP, and enable ripd
 
     The dataplane has carried multicast forwarding all along -- ip_mroute.c
     and ip6_mroute.c, roughly 3200 lines, plus the netlink path that feeds

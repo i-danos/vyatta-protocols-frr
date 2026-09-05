@@ -1,0 +1,450 @@
+module vyatta-protocols-frr-rip-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-protocols-frr-rip:1";
+	prefix protocols-frr-rip;
+
+	import configd-v1 {
+		prefix configd;
+	}
+
+	import vyatta-types-v1 {
+		prefix types;
+	}
+
+	import vyatta-policy-v1 {
+		prefix policy;
+	}
+
+	import vyatta-policy-route-v1 {
+		prefix policy-route;
+	}
+
+	import vyatta-protocols-v1 {
+		prefix protocols;
+	}
+
+	import vyatta-interfaces-v1 {
+		prefix if;
+	}
+
+	import vyatta-interfaces-bridge-v1 {
+		prefix interfaces-bridge;
+	}
+
+	import vyatta-interfaces-dataplane-v1 {
+		prefix interfaces-dataplane;
+	}
+
+	import vyatta-interfaces-bonding-v1 {
+		prefix interfaces-bonding;
+	}
+
+	import vyatta-interfaces-loopback-v1 {
+		prefix interfaces-loopback;
+	}
+
+	import vyatta-interfaces-tunnel-v1 {
+		prefix interfaces-tunnel;
+	}
+
+	import vyatta-interfaces-vti-v1 {
+		prefix interfaces-vti;
+	}
+
+	organization "i-danos";
+	contact
+		"i-danos
+		 Web: https://github.com/i-danos";
+
+	description
+		"Copyright (c) 2026, i-danos. All rights reserved.
+		 Redistribution and use in source and binary forms, with or
+		 without modification, are permitted provided that the following
+		 conditions are met:
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 RIP version 2, as ripd implements it.
+
+		 ripd ships in frr 10.3 and was not enabled, the same shape as pimd,
+		 pim6d and bfdd before it. RIP needs nothing from the dataplane: its
+		 updates are link-local multicast to 224.0.0.9, which is punted the
+		 same way OSPF's are, and its routes reach the forwarding table by
+		 the zebra-to-netlink path every other protocol uses. That was
+		 confirmed on a router before any of this was written -- a prefix
+		 advertised only in RIP arrived as 'proto rip' in the kernel, in the
+		 dataplane route table, and forwarded.
+
+		 Every command here came from the shipping ripd, by entering the
+		 router rip node in vtysh and listing it, and from the interface
+		 node for the per-interface half.";
+
+	revision 2026-09-05 {
+		description "Initial revision of version 1.";
+	}
+
+	/*
+	 * Typedefs
+	 */
+	typedef access-list-ref {
+		type leafref {
+			path "/policy:policy/policy-route:route/policy-route:access-list/policy-route:tagnode";
+		}
+		description "A type for reference to an access list.";
+	}
+	typedef prefix-list-ref {
+		type leafref {
+			path "/policy:policy/policy-route:route/policy-route:prefix-list/policy-route:tagnode";
+		}
+		description "A type for reference to an IPv4 prefix list.";
+	}
+
+	/*
+	 * Groupings
+	 */
+	grouping itf-ip-rip {
+		container rip {
+			configd:help "Routing Information Protocol (RIP) parameters";
+			description
+				"Per-interface RIP behaviour. Enabling RIP itself is done by
+				matching the interface's subnet with a network statement
+				under 'protocols rip', not here.";
+
+			container authentication {
+				configd:help "Authentication for RIP updates on this interface";
+
+				leaf mode {
+					type enumeration {
+						enum text {
+							configd:help "Plain text, which offers no real protection";
+						}
+						enum md5 {
+							configd:help "MD5 digest";
+						}
+					}
+					configd:help "Authentication mode";
+				}
+				leaf string {
+					type string {
+						length 1..16;
+					}
+					configd:secret "true";
+					configd:help "Plain text authentication string";
+					must "not(../key-chain)" {
+						error-message "Use either an authentication string or a key chain, not both";
+					}
+				}
+				leaf key-chain {
+					type string {
+						length 1..32;
+					}
+					configd:help "Key chain supplying the authentication keys";
+				}
+			}
+			container send {
+				configd:help "Versions advertised on this interface";
+
+				leaf version {
+					type enumeration {
+						enum "1" { configd:help "RIPv1 only"; }
+						enum "2" { configd:help "RIPv2 only"; }
+						enum "1 2" { configd:help "Both versions"; }
+						enum none { configd:help "Send nothing"; }
+					}
+					configd:help "Version to send";
+				}
+			}
+			container receive {
+				configd:help "Versions accepted on this interface";
+
+				leaf version {
+					type enumeration {
+						enum "1" { configd:help "RIPv1 only"; }
+						enum "2" { configd:help "RIPv2 only"; }
+						enum "1 2" { configd:help "Both versions"; }
+						enum none { configd:help "Receive nothing"; }
+					}
+					configd:help "Version to accept";
+				}
+			}
+			container split-horizon {
+				configd:help "Split horizon";
+				description
+					"On by default in ripd. Present here to turn on poisoned
+					reverse, or to record the choice explicitly.";
+				presence "Present to configure split horizon.";
+
+				leaf poisoned-reverse {
+					type empty;
+					configd:help "Advertise learned routes back with an infinite metric";
+				}
+			}
+			leaf v2-broadcast {
+				type empty;
+				configd:help "Send RIPv2 updates as broadcast rather than multicast";
+				description
+					"For neighbours that do not listen on 224.0.0.9.";
+			}
+			container bfd {
+				configd:help "Bidirectional Forwarding Detection";
+				description
+					"Watch this RIP adjacency with BFD. RIP's own timers are
+					slow -- the default hold is 180 seconds -- so this is the
+					difference between noticing a failure in under a second
+					and in three minutes.";
+				presence "Present to enable BFD on this interface.";
+
+				leaf profile {
+					type string {
+						length 1..64;
+					}
+					configd:help "BFD profile supplying the session parameters";
+					description
+						"Names a profile under 'protocols bfd profile'. Not a
+						leafref: the two are separate modules, and a
+						cross-module leafref would make this one fail to load
+						wherever the BFD module is absent.";
+				}
+			}
+		} // rip
+	}
+
+	augment /protocols:protocols {
+		description "RIP augmentation.";
+		container rip {
+			configd:help "Routing Information Protocol (RIP)";
+			presence "Present for RIP configuration.";
+
+			list network {
+				key "tagnode";
+				configd:help "Network to run RIP on and advertise";
+				description
+					"A prefix here does two things at once, as RIP has always
+					done: interfaces whose address falls inside it start
+					running RIP, and the prefix itself is advertised.";
+
+				leaf tagnode {
+					type types:ipv4-prefix;
+					configd:help "Network prefix";
+				}
+			}
+			list interface {
+				key "tagnode";
+				configd:help "Interface to run RIP on, by name";
+				description
+					"The other form of the network statement: names an
+					interface directly instead of matching its subnet.";
+
+				leaf tagnode {
+					type string;
+					configd:help "Interface name";
+				}
+			}
+			list neighbor {
+				key "tagnode";
+				configd:help "Unicast neighbour";
+				description
+					"Sends updates to this address directly, for links where
+					multicast or broadcast does not reach.";
+
+				leaf tagnode {
+					type types:ipv4-address;
+					configd:help "Neighbour address";
+				}
+			}
+			list route {
+				key "tagnode";
+				configd:help "Static route injected into RIP";
+
+				leaf tagnode {
+					type types:ipv4-prefix;
+					configd:help "Prefix to advertise";
+				}
+			}
+			leaf version {
+				type uint32 {
+					range 1..2;
+				}
+				configd:help "Default RIP version for all interfaces";
+			}
+			leaf default-metric {
+				type uint32 {
+					range 1..16;
+				}
+				configd:help "Metric applied to redistributed routes";
+				description
+					"16 is infinity in RIP, so a redistributed route given
+					that metric is advertised as unreachable.";
+			}
+			leaf default-information-originate {
+				type empty;
+				configd:help "Advertise a default route";
+			}
+			leaf distance {
+				type uint32 {
+					range 1..255;
+				}
+				configd:help "Administrative distance";
+				description
+					"120 by default, which loses to OSPF at 110 and BGP at
+					20. Worth knowing when a RIP route does not appear in the
+					forwarding table: it may have been learned and beaten.";
+			}
+			container timers {
+				configd:help "RIP timers";
+				description
+					"FRR takes all three positionally in one command, so they
+					are set together or not at all.";
+				presence "Present to override the RIP timers.";
+				must "update and timeout and garbage-collection" {
+					error-message "RIP timers update, timeout and garbage-collection must all be set";
+				}
+
+				leaf update {
+					type uint32 {
+						range 5..2147483647;
+					}
+					units seconds;
+					configd:help "Interval between updates (seconds)";
+				}
+				leaf timeout {
+					type uint32 {
+						range 5..2147483647;
+					}
+					units seconds;
+					configd:help "Time before a route is declared unreachable (seconds)";
+				}
+				leaf garbage-collection {
+					type uint32 {
+						range 5..2147483647;
+					}
+					units seconds;
+					configd:help "Time before an unreachable route is removed (seconds)";
+				}
+			}
+			container passive-interface {
+				configd:help "Interfaces that listen but do not advertise";
+
+				leaf default {
+					type empty;
+					configd:help "Make every interface passive by default";
+				}
+				list interface {
+					key "tagnode";
+					configd:help "Interface to make passive";
+
+					leaf tagnode {
+						type string;
+						configd:help "Interface name";
+					}
+				}
+			}
+			list redistribute {
+				key "tagnode";
+				configd:help "Redistribute routes from another protocol";
+
+				leaf tagnode {
+					type enumeration {
+						enum kernel    { configd:help "Kernel routes"; }
+						enum connected { configd:help "Connected routes"; }
+						enum static    { configd:help "Static routes"; }
+						enum ospf      { configd:help "OSPF routes"; }
+						enum isis      { configd:help "IS-IS routes"; }
+						enum bgp       { configd:help "BGP routes"; }
+					}
+					configd:help "Source protocol";
+				}
+				leaf metric {
+					type uint32 {
+						range 0..16;
+					}
+					configd:help "Metric for the redistributed routes";
+				}
+				leaf route-map {
+					type string {
+						length 1..64;
+					}
+					configd:help "Route map filtering what is redistributed";
+				}
+			}
+			container distribute-list {
+				configd:help "Filter updates by access list or prefix list";
+
+				leaf in {
+					type access-list-ref;
+					configd:help "Access list applied to received updates";
+				}
+				leaf out {
+					type access-list-ref;
+					configd:help "Access list applied to sent updates";
+				}
+				container prefix {
+					configd:help "Filter by prefix list instead";
+
+					leaf in {
+						type prefix-list-ref;
+						configd:help "Prefix list applied to received updates";
+					}
+					leaf out {
+						type prefix-list-ref;
+						configd:help "Prefix list applied to sent updates";
+					}
+				}
+			}
+			leaf allow-ecmp {
+				type uint32 {
+					range 1..256;
+				}
+				configd:help "Maximum equal-cost paths to install";
+			}
+			container bfd {
+				configd:help "Bidirectional Forwarding Detection";
+
+				leaf default-profile {
+					type string {
+						length 1..64;
+					}
+					configd:help "BFD profile used by RIP sessions that name none";
+				}
+			}
+		} // container rip
+	}
+
+	/*
+	 * RIP is offered on the same interface types as OSPF, which is the
+	 * established set in this package for a protocol that runs on any routed
+	 * interface.
+	 */
+	augment /if:interfaces/interfaces-bridge:bridge/interfaces-bridge:ip {
+		uses itf-ip-rip;
+	}
+	augment /if:interfaces/interfaces-dataplane:dataplane/interfaces-dataplane:ip {
+		uses itf-ip-rip;
+	}
+	augment /if:interfaces/interfaces-dataplane:dataplane/interfaces-dataplane:vif/interfaces-dataplane:ip {
+		uses itf-ip-rip;
+	}
+	augment /if:interfaces/interfaces-bonding:bonding/interfaces-bonding:ip {
+		uses itf-ip-rip;
+	}
+	augment /if:interfaces/interfaces-bonding:bonding/interfaces-bonding:vif/interfaces-bonding:ip {
+		uses itf-ip-rip;
+	}
+	augment /if:interfaces/interfaces-loopback:loopback/interfaces-loopback:ip {
+		uses itf-ip-rip;
+	}
+	augment /if:interfaces/interfaces-tunnel:tunnel/interfaces-tunnel:ip {
+		uses itf-ip-rip;
+	}
+	augment /if:interfaces/interfaces-vti:vti/interfaces-vti:ip {
+		uses itf-ip-rip;
+	}
+}

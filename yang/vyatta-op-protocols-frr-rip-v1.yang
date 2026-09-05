@@ -1,0 +1,62 @@
+module vyatta-op-protocols-frr-rip-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-op-rip-1";
+	prefix vyatta-op-protocols-frr-rip-v1;
+
+	import vyatta-opd-extensions-v1 {
+		prefix opd;
+	}
+	import vyatta-op-show-v1 {
+		prefix op-show;
+	}
+	import vyatta-op-show-protocols-v1 {
+		prefix op-show-protocols;
+	}
+
+	organization "i-danos";
+	contact
+		"i-danos
+		 Web: https://github.com/i-danos";
+
+	description
+		"Copyright (c) 2026, i-danos. All rights reserved.
+		 Redistribution and use in source and binary forms, with or
+		 without modification, are permitted provided that the following
+		 conditions are met:
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 Operational commands for RIP.
+
+		 ripd offers only two, which is the whole surface: the route table
+		 and the protocol status. 'status' is the more useful of the pair --
+		 it carries the timers, the interfaces RIP is running on, and the
+		 neighbour table with its bad-packet counters, which is where a
+		 one-way adjacency shows up.";
+
+	revision 2026-09-05 {
+		description "Initial revision";
+	}
+
+	opd:augment /op-show:show/op-show-protocols:protocols {
+		opd:command rip {
+			opd:help "Show RIP information";
+			opd:on-enter 'vtysh -c "show ip rip"';
+			opd:privileged true;
+
+			opd:command status {
+				opd:help "Timers, interfaces and neighbours";
+				opd:on-enter 'vtysh -c "show ip rip status"';
+				opd:privileged true;
+			}
+		}
+	}
+}

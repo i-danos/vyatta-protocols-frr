@@ -207,6 +207,24 @@ Conflicts: vyatta-protocols-mpls-ldp-v1-yang
 Description: FRR ldp yang module package
  The YANG module package for vyatta-protocols-frr-ldp-v1
 
+Package: vyatta-op-protocols-frr-rip-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}
+Description: RIP operational YANG module
+ The YANG module package for vyatta-op-protocols-frr-rip-v1
+
+Package: vyatta-protocols-frr-rip-v1-yang
+Architecture: all
+Depends:
+ frr,
+ vyatta-cfg (>= 0.18.56),
+ vyatta-frr-vci,
+ vyatta-protocols-frr (>= ${source:Version}),
+ ${misc:Depends},
+ ${yang:Depends}
+Description: FRR RIP yang module package
+ The YANG module package for vyatta-protocols-frr-rip-v1
+
 Package: vyatta-op-protocols-frr-bfd-v1-yang
 Architecture: all
 Depends: ${misc:Depends}, ${yang:Depends}

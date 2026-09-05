@@ -12,6 +12,7 @@ Modules=vyatta-protocols-frr-bgp-v1,                      \
     vyatta-protocols-frr-pim-v1,                          \
     vyatta-protocols-frr-pim6-v1,                         \
     vyatta-protocols-frr-bfd-v1,                          \
+    vyatta-protocols-frr-rip-v1,                          \
     vyatta-protocols-frr-isis-v1,                         \
     vyatta-protocols-frr-ospf-routing-instance-v1,        \
     vyatta-protocols-frr-switch-vif-ospf-v1,              \
