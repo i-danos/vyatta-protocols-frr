@@ -5,6 +5,36 @@
 
 vtysh_enable=yes
 
+# watchfrr polls every 5 seconds by default and makes its first connection
+# attempt with no delay at all -- thread_add_timer_msec(..., wakeup_init, ..., 0).
+# A daemon that is not listening yet is therefore marked down immediately and
+# restarted one period later, while it is still starting.
+#
+# For ldpd that restart is destructive. Observed on a booting router:
+#
+#   watchfrr: ldpd state -> down : initial connection attempt failed
+#   watchfrr: restart ldpd
+#   frrinit.sh: Cannot stop ldpd: pid file not found
+#   frrinit.sh: Could not lock pid_file /run/frr/ldpd.pid ... exiting
+#   watchfrr: ldpd state -> up : connect succeeded
+#
+# The first ldpd had not written its pid file, so the restart could not stop it
+# and started a second one; the duplicate unlinked /run/frr/ldpd.sock before
+# dying on the pid-file lock. The surviving ldpd runs LDP correctly -- sessions
+# reach OPERATIONAL -- but the control socket is gone, so every
+# "show mpls ldp ..." returns an empty result with no error anywhere. That is
+# what it looks like from the CLI: LDP appears not to be working at all.
+#
+# This became reachable when the daemon list grew from 8 to 12 (pimd, pim6d,
+# bfdd, ripd). ldpd starts late in that list and forks three processes, so on a
+# 2-vCPU box it can take longer than one poll period to listen. It is a race,
+# not a certainty: of four routers booted together, one lost it.
+#
+# 15s gives a slow daemon room without changing anything else. The cost is that
+# a genuinely dead daemon is noticed in 15s rather than 5s, which is a fair
+# trade for not corrupting a healthy one at every boot.
+watchfrr_options="-i 15"
+
 bgpd=yes
 isisd=yes
 ospfd=yes
