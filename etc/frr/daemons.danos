@@ -32,7 +32,17 @@ vtysh_enable=yes
 #
 # 15s gives a slow daemon room without changing anything else. The cost is that
 # a genuinely dead daemon is noticed in 15s rather than 5s, which is a fair
-# trade for not corrupting a healthy one at every boot.
+# trade for not corrupting a healthy one.
+#
+# Honest about what this is: mitigation, not a demonstrated fix. Reproducing
+# the race on demand did not work -- delaying ldpd by 7s and running
+# systemctl start frr under -i 5 did not restart it, because every daemon
+# reports "initial connection attempt failed" at startup as a matter of course
+# and watchfrr handles daemons differently during its 55s startup phase. What
+# pushed the affected router out of that phase is not yet understood. The
+# evidence is frequency only: one failure before, 12 router-boots clean after.
+# At the observed rate that is roughly a one-in-three outcome by chance, so it
+# corroborates and does not prove.
 watchfrr_options="-i 15"
 
 bgpd=yes
