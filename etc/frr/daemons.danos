@@ -34,15 +34,31 @@ vtysh_enable=yes
 # a genuinely dead daemon is noticed in 15s rather than 5s, which is a fair
 # trade for not corrupting a healthy one.
 #
-# Honest about what this is: mitigation, not a demonstrated fix. Reproducing
-# the race on demand did not work -- delaying ldpd by 7s and running
-# systemctl start frr under -i 5 did not restart it, because every daemon
-# reports "initial connection attempt failed" at startup as a matter of course
-# and watchfrr handles daemons differently during its 55s startup phase. What
-# pushed the affected router out of that phase is not yet understood. The
-# evidence is frequency only: one failure before, 12 router-boots clean after.
-# At the observed rate that is roughly a one-in-three outcome by chance, so it
-# corroborates and does not prove.
+# What makes the race narrow, and why it took a while to reproduce: ldpd is not
+# watchfrr's "special" daemon, and try_restart() will not restart a non-special
+# daemon unless zebra is already up --
+#
+#   if ((gs.special->state == DAEMON_UP) && (gs.phase == PHASE_NONE))
+#           run_job(&dmn->restart, "restart", ...);
+#   else
+#           zlog_debug("%s: postponing restart attempt because master %s daemon
+#                       not up [%s], or phased restart in progress", ...);
+#
+# and that postponement is logged at debug level, so it is invisible by default.
+# The restart therefore fires only when a poll of ldpd lands in the window where
+# zebra is up and ldpd is not. A first attempt with a 7s delay missed it by
+# about a second: zebra came up at 5s, ldpd at 9s, and ldpd's polls fell at 5s
+# and 10s, either side of the window.
+#
+# Demonstrated with a 12s delay on the ldpd parent, both directions, everything
+# else identical:
+#
+#   -i 5    restart ldpd 2, ldpd.pid lock failure 1, ldpd.sock MISSING,
+#           "show mpls ldp neighbor" 0 lines -- the production symptom exactly
+#   -i 15   restart ldpd 0, no lock failure, ldpd.sock present,
+#           "show mpls ldp neighbor" prints its header
+#
+# 12 router-boots on the rebuilt image were also clean.
 watchfrr_options="-i 15"
 
 bgpd=yes
