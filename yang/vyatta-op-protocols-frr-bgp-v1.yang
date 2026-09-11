@@ -424,6 +424,144 @@ module vyatta-op-protocols-frr-bgp-v1 {
                     }
                 }
             }
+            opd:command l2vpn {
+                opd:help "Show BGP address family L2VPN information";
+                opd:command evpn {
+                    opd:help "Show BGP L2VPN EVPN information";
+                    opd:on-enter 'vtysh -c "show bgp l2vpn evpn"';
+                    opd:privileged true;
+
+                    opd:command summary {
+                        opd:help "Show BGP L2VPN EVPN neighbour summary";
+                        opd:on-enter 'vtysh -c "show bgp l2vpn evpn summary"';
+                        opd:privileged true;
+                    }
+                    opd:command vni {
+                        opd:help "Show the VNIs BGP knows about";
+                        opd:on-enter 'vtysh -c "show bgp l2vpn evpn vni"';
+                        opd:privileged true;
+                        opd:argument vni-id {
+                            opd:help "Show one VNI";
+                            opd:on-enter 'vtysh -c "show bgp l2vpn evpn vni $7"';
+                            opd:privileged true;
+                            type uint32 {
+                                range 1..16777215;
+                            }
+                        }
+                    }
+                    opd:command route {
+                        opd:help "Show EVPN routes";
+                        opd:on-enter 'vtysh -c "show bgp l2vpn evpn route"';
+                        opd:privileged true;
+
+                        opd:command type {
+                            opd:help "Show EVPN routes of one type";
+                            opd:command macip {
+                                opd:help "Type-2, a MAC address and optionally the IP behind it";
+                                opd:on-enter 'vtysh -c "show bgp l2vpn evpn route type macip"';
+                                opd:privileged true;
+                            }
+                            opd:command multicast {
+                                opd:help "Type-3, which VTEPs want flooded traffic for a VNI";
+                                opd:on-enter 'vtysh -c "show bgp l2vpn evpn route type multicast"';
+                                opd:privileged true;
+                            }
+                            opd:command prefix {
+                                opd:help "Type-5, an IP prefix rather than a MAC";
+                                opd:on-enter 'vtysh -c "show bgp l2vpn evpn route type prefix"';
+                                opd:privileged true;
+                            }
+                        }
+                    }
+                    opd:command import-rt {
+                        opd:help "Show the route targets this router imports";
+                        opd:on-enter 'vtysh -c "show bgp l2vpn evpn import-rt"';
+                        opd:privileged true;
+                    }
+                }
+            }
+        }
+        /*
+         * zebra's view, which is a different question from the one above.
+         * "show protocols bgp l2vpn evpn" says what BGP holds; this says what
+         * was actually learned and programmed. A MAC can be in the first and
+         * missing from the second, and that gap is where EVPN faults live.
+         */
+        opd:command evpn {
+            opd:help "Show EVPN state learned and programmed on this router";
+            opd:on-enter 'vtysh -c "show evpn"';
+            opd:privileged true;
+
+            opd:command vni {
+                opd:help "Show the VNIs this router has";
+                opd:on-enter 'vtysh -c "show evpn vni"';
+                opd:privileged true;
+                opd:argument vni-id {
+                    opd:help "Show one VNI in detail";
+                    opd:on-enter 'vtysh -c "show evpn vni $5"';
+                    opd:privileged true;
+                    type uint32 {
+                        range 1..16777215;
+                    }
+                }
+            }
+            opd:command mac {
+                opd:help "Show the MAC addresses EVPN knows, local and remote";
+                opd:command vni {
+                    opd:help "Show the MAC addresses of one VNI";
+                    opd:argument vni-id {
+                        opd:help "VXLAN network identifier";
+                        opd:on-enter 'vtysh -c "show evpn mac vni $6"';
+                        opd:privileged true;
+                        type uint32 {
+                            range 1..16777215;
+                        }
+                    }
+                    opd:command all {
+                        opd:help "Show the MAC addresses of every VNI";
+                        opd:on-enter 'vtysh -c "show evpn mac vni all"';
+                        opd:privileged true;
+                    }
+                }
+            }
+            opd:command arp-cache {
+                opd:help "Show the ARP and ND entries EVPN learned, which is what suppresses flooding";
+                opd:command vni {
+                    opd:help "Show the entries of one VNI";
+                    opd:argument vni-id {
+                        opd:help "VXLAN network identifier";
+                        opd:on-enter 'vtysh -c "show evpn arp-cache vni $6"';
+                        opd:privileged true;
+                        type uint32 {
+                            range 1..16777215;
+                        }
+                    }
+                    opd:command all {
+                        opd:help "Show the entries of every VNI";
+                        opd:on-enter 'vtysh -c "show evpn arp-cache vni all"';
+                        opd:privileged true;
+                    }
+                }
+            }
+            opd:command rmac {
+                opd:help "Show the router MACs used for routed EVPN traffic";
+                opd:command vni {
+                    opd:help "Show the router MACs of one L3 VNI";
+                    opd:argument vni-id {
+                        opd:help "L3 VXLAN network identifier";
+                        opd:on-enter 'vtysh -c "show evpn rmac vni $6"';
+                        opd:privileged true;
+                        type uint32 {
+                            range 1..16777215;
+                        }
+                    }
+                    opd:command all {
+                        opd:help "Show the router MACs of every L3 VNI";
+                        opd:on-enter 'vtysh -c "show evpn rmac vni all"';
+                        opd:privileged true;
+                    }
+                }
+            }
         }
     }
     opd:augment /op-reset:reset/op-reset-protocols:protocols {

@@ -1370,6 +1370,24 @@ module vyatta-protocols-frr-bgp-v1 {
 						}
 					}
 
+					container l2vpn-evpn {
+						description
+							"Carries EVPN routes to every member of this peer
+							group. The address family still has to be enabled
+							globally, which is where the VNIs come from.";
+						presence "Enables the EVPN address family for this peer group";
+						configd:help "EVPN parameters";
+
+						leaf route-reflector-client {
+							type empty;
+							configd:help "Treat members of this peer group as route reflector clients";
+						}
+						leaf soft-reconfiguration-inbound {
+							type empty;
+							configd:help "Keep received routes so policy can be reapplied without a reset";
+						}
+					}
+
 					container ipv6-unicast {
 						description "BGP peer-group IPv6 unicast parameters";
 						presence "Enables BGP peer-group IPv6 unicast parameters";
@@ -1660,6 +1678,31 @@ module vyatta-protocols-frr-bgp-v1 {
 						}
 					}
 
+					container l2vpn-evpn {
+						description
+							"Carries EVPN routes to this neighbour. The
+							address family has to be enabled globally as well:
+							this container activates the session for it, and
+							the global one decides which VNIs there are to
+							send. Either alone exchanges no MACs.";
+						presence "Enables the EVPN address family for this neighbor";
+						configd:help "EVPN parameters";
+
+						leaf route-reflector-client {
+							type empty;
+							configd:help "Treat this neighbor as a route reflector client";
+							description
+								"EVPN in a fabric of any size is usually
+								reflected rather than fully meshed, and the
+								reflector must not drop type-2 routes it has
+								no local VNI for.";
+						}
+						leaf soft-reconfiguration-inbound {
+							type empty;
+							configd:help "Keep received routes so policy can be reapplied without a reset";
+						}
+					}
+
 					container ipv6-unicast {
 						description "BGP neighbor parameters";
 						presence "Enables BGP neighbor IPv6 parameters";
@@ -1788,6 +1831,112 @@ module vyatta-protocols-frr-bgp-v1 {
 							"Normally a PE discards a VPN route no local VRF
 							wants. A route reflector has to keep them, because
 							it reflects for VRFs it does not itself hold.";
+					}
+				}
+
+				container l2vpn-evpn {
+					description
+						"The EVPN table, which carries MAC addresses rather
+						than prefixes. A bridge with a VXLAN member learns a
+						MAC locally, it reaches the kernel bridge FDB, zebra
+						derives the VNI from the VXLAN interface, and this
+						address family advertises it as a type-2 route. The
+						far end installs it against the advertising VTEP, so
+						the bridge domain spans both routers without flooding
+						to find where a host lives.
+
+						This container is what emits the 'address-family l2vpn
+						evpn' block. The neighbours that carry it must also be
+						activated under their own l2vpn-evpn container; a
+						session with none of that exchanges no MACs.";
+					presence "Enables the EVPN address family";
+					configd:help "EVPN settings";
+
+					leaf advertise-all-vni {
+						type empty;
+						configd:help "Advertise every VNI the kernel knows about";
+						description
+							"Without this, EVPN advertises only the VNIs named
+							in a vni node below. With it, zebra reports every
+							VNI it finds on a VXLAN interface and each one is
+							advertised, which is what a leaf switch normally
+							wants and what avoids restating in BGP what the
+							interface configuration already says.";
+					}
+
+					leaf advertise-default-gw {
+						type empty;
+						configd:help "Advertise the bridge's own address and MAC as a default gateway";
+						description
+							"Lets the far end resolve its gateway locally
+							instead of sending every first hop across the
+							fabric. Relevant when both ends address the same
+							bridge domain.";
+					}
+
+					list vni {
+						description
+							"Per-VNI overrides. A VNI needs an entry here only
+							to give it a route distinguisher or route targets
+							other than the ones derived from the router-id and
+							the VNI itself. With advertise-all-vni set, a VNI
+							absent from this list is still advertised.";
+						configd:help "Per-VNI EVPN settings";
+						key "tagnode";
+
+						leaf tagnode {
+							type uint32 {
+								range 1..16777215;
+								configd:help "VXLAN network identifier";
+							}
+							configd:help "VXLAN network identifier";
+						}
+
+						leaf rd {
+							type string {
+								pattern '([0-9]+|((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])):[0-9]+' {
+									error-message "Route distinguisher must be ASN:nn or IP-address:nn";
+								}
+							}
+							configd:help "Route distinguisher for this VNI (ASN:nn or IP-address:nn)";
+							description
+								"Makes this VNI's routes unique across the
+								fabric. Left unset, FRR derives one from the
+								router-id and the VNI, which is usually what
+								you want -- set it only where an existing
+								numbering plan says otherwise.";
+						}
+
+						container route-target {
+							description "Route targets controlling which VNIs import this one's routes";
+							presence "Enables per-VNI route targets";
+							configd:help "Route target settings for this VNI";
+
+							leaf-list import {
+								type string {
+									pattern '([0-9]+|((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])):[0-9]+' {
+										error-message "Route target must be ASN:nn or IP-address:nn";
+									}
+								}
+								ordered-by user;
+								configd:help "Import routes carrying this route target";
+							}
+
+							leaf-list export {
+								type string {
+									pattern '([0-9]+|((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])):[0-9]+' {
+										error-message "Route target must be ASN:nn or IP-address:nn";
+									}
+								}
+								ordered-by user;
+								configd:help "Attach this route target to routes from this VNI";
+							}
+						}
+
+						leaf advertise-default-gw {
+							type empty;
+							configd:help "Advertise this VNI's gateway address and MAC";
+						}
 					}
 				}
 
