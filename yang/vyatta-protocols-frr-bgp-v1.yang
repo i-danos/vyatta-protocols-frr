@@ -1938,6 +1938,41 @@ module vyatta-protocols-frr-bgp-v1 {
 							configd:help "Advertise this VNI's gateway address and MAC";
 						}
 					}
+
+					/*
+					 * These two matter under a routing instance and do nothing under
+					 * the global BGP instance, which has no tenant prefixes of its own
+					 * to originate. The container is shared between both, because the
+					 * routing-instance model reuses this grouping.
+					 */
+					leaf advertise-ipv4-unicast {
+						type empty;
+						configd:help "Advertise this routing instance's IPv4 prefixes as type-5 routes";
+						description
+							"Symmetric IRB: originate this routing instance's
+							 prefixes as EVPN type-5 routes, so other leaves reach
+							 them over the transit VNI rather than needing a bridge
+							 domain of their own for every subnet.
+
+							 Advertises what is in this instance's BGP IPv4 unicast
+							 table, not what is in its routing table. A connected
+							 subnet is not there until something puts it there, so on
+							 its own this advertises nothing and reports no error.
+							 Pair it with 'address-family ipv4-unicast redistribute
+							 connected', or with network statements.
+
+							 'show protocols bgp l2vpn evpn route type prefix' is
+							 where to look, and an empty table with this configured
+							 is that pairing missing.";
+					}
+
+					leaf advertise-ipv6-unicast {
+						type empty;
+						configd:help "Advertise this routing instance's IPv6 prefixes as type-5 routes";
+						description
+							"As advertise-ipv4-unicast, over this instance's BGP
+							 IPv6 unicast table.";
+					}
 				}
 
 				container ipv6-unicast {

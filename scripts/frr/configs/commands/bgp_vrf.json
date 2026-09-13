@@ -217,5 +217,9 @@
     "/routing/routing-instance/@element/protocols/bgp/@element/address-family/ipv4-unicast/label/vpn-export": "label vpn export {/@text}",
     "/routing/routing-instance/@element/protocols/bgp/@element/address-family/ipv4-unicast/label/allocation-mode": "label vpn export allocation-mode {/@text}",
     "/routing/routing-instance/@element/protocols/bgp/@element/address-family/ipv6-unicast/label/vpn-export": "label vpn export {/@text}",
-    "/routing/routing-instance/@element/protocols/bgp/@element/address-family/ipv6-unicast/label/allocation-mode": "label vpn export allocation-mode {/@text}"
+    "/routing/routing-instance/@element/protocols/bgp/@element/address-family/ipv6-unicast/label/allocation-mode": "label vpn export allocation-mode {/@text}",
+    "/routing/routing-instance/@element/protocols/bgp/@element/address-family/l2vpn-evpn/@enter": "address-family l2vpn evpn",
+    "/routing/routing-instance/@element/protocols/bgp/@element/address-family/l2vpn-evpn/@exit": "exit-address-family",
+    "/routing/routing-instance/@element/protocols/bgp/@element/address-family/l2vpn-evpn/advertise-ipv4-unicast": " advertise ipv4 unicast",
+    "/routing/routing-instance/@element/protocols/bgp/@element/address-family/l2vpn-evpn/advertise-ipv6-unicast": " advertise ipv6 unicast"
 }

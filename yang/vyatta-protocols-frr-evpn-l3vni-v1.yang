@@ -1,0 +1,73 @@
+module vyatta-protocols-frr-evpn-l3vni-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-protocols-frr-evpn-l3vni:1";
+	prefix vyatta-protocols-frr-evpn-l3vni-v1;
+
+	import vyatta-routing-v1 {
+		prefix vyatta-routing;
+	}
+	import configd-v1 {
+		prefix configd;
+	}
+
+	organization "i-danos";
+	contact
+		"https://github.com/i-danos";
+
+	description
+		"The transit VNI a routing instance routes over, which EVPN calls
+		 an L3VNI.
+
+		 Symmetric IRB routes at both ends of a fabric. A packet leaving
+		 one leaf for a subnet on another is routed in the tenant's
+		 routing instance, encapsulated into this VNI addressed to the
+		 far leaf's router MAC, and routed again on arrival. The leaves
+		 exchange reachability as EVPN type-5 routes carrying that MAC,
+		 so a leaf holds only the VNIs whose hosts it actually has --
+		 which is the whole difference from asymmetric IRB, where every
+		 leaf must host every VNI in the tenant.
+
+		 What this names is the bridge domain the routed traffic
+		 traverses. Configure it like any other: a bridge whose only
+		 member is a VXLAN tunnel, with an address on the bridge, and
+		 the bridge bound to this routing instance. Naming the VNI here
+		 is what tells the control plane that this domain carries routed
+		 traffic rather than a tenant's own.
+
+		 Copyright (c) 2026, i-danos.
+
+		 SPDX-License-Identifier: LGPL-2.1-only";
+
+	revision 2026-09-13 {
+		description "Initial revision.";
+	}
+
+	augment /vyatta-routing:routing/vyatta-routing:routing-instance {
+		description
+			"The L3VNI belongs to the routing instance rather than to
+			 BGP: it is a property of the tenant, and zebra reads it
+			 whether or not BGP is running.";
+
+		leaf vni {
+			type uint32 {
+				range 1..16777215;
+			}
+			description
+				"The VNI this routing instance routes over.
+
+				 The tunnel carrying it must be in a bridge that is
+				 itself an interface of this routing instance, and
+				 that bridge must have an address. The address is
+				 how the far leaf's router MAC is resolved, and its
+				 own MAC is this leaf's router MAC.
+
+				 'show protocols evpn vni' reports it as type L3
+				 against this instance once it is accepted. A VNI
+				 shown as L2 there is carrying a tenant's own
+				 traffic instead, which means this leaf will need
+				 every VNI in the fabric -- the asymmetric
+				 arrangement, which works and does not scale the
+				 same way.";
+			configd:help "Transit VNI this routing instance routes over";
+		}
+	}
+}
