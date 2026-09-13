@@ -89,7 +89,7 @@ Description: bgp yang module package
 
 Package: vyatta-protocols-frr-evpn-l3vni-v1-yang
 Architecture: all
-Depends: ${misc:Depends}, ${yang:Depends}
+Depends: frr, vyatta-frr-vci, ${misc:Depends}, ${yang:Depends}
 Description: EVPN L3VNI for a routing instance
  YANG module naming the transit VNI a routing instance routes over, which is
  what makes symmetric IRB possible: a leaf then carries only the VNIs whose

@@ -24,6 +24,7 @@ Modules=vyatta-protocols-frr-bgp-v1,                      \
     vyatta-policy-route-deviation-danos-v1,               \
     vyatta-protocols-static-v1,                           \
     vyatta-protocols-static-routing-instance-v1,          \
-    vyatta-protocols-static-routing-instance-inter-vrf-v1
+    vyatta-protocols-static-routing-instance-inter-vrf-v1,    \
+    vyatta-protocols-frr-evpn-l3vni-v1
 
 ModelSets=vyatta-v1
